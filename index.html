@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#13102e">
-<meta name="app-build" content="2026-11-12.8">
+<meta name="app-build" content="2026-11-12.9">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1087,7 +1087,7 @@ const SPRITE = {
 };
 /* Jede Person hat ihr eigenes Figurenpaar: meine (meP) und je eine Gruppe für jede andere online befindliche Person.
    Meine Figuren laufen nur durch MEINE Aktionen; die der anderen folgen deren Standort aus der Live-Anwesenheit. */
-const FIGS={a:{n:'Anzug',k:'s',top:-66,rx:16},h:{n:'Hemd',k:'h',top:-79,rx:23},w:{n:'Elegant',k:'w',top:-68,rx:16}};
+const FIGS={a:{n:'Valentino',k:'s',top:-66,rx:16},h:{n:'Sandro',k:'h',top:-79,rx:23},w:{n:'Jay',k:'w',top:-68,rx:16}};
 let MYFIG='a'; try{ const f=localStorage.getItem('lpq-fig'); if(FIGS[f]) MYFIG=f; }catch(e){}
 const parties=[]; let meP=null;
 function mkChar(fig){
