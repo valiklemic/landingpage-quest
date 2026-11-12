@@ -163,27 +163,65 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
 @keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
 .brlabel{font-size:13px;font-weight:700;letter-spacing:.12em;text-anchor:middle;fill:var(--c);opacity:.75;pointer-events:none;text-transform:uppercase}
 
+#btnMore{display:none}
+#btnNext .sm{display:none}
+#top .br{display:none}
 @media(max-width:860px){
   #btnPanel{display:inline-block}
-  #panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:66vh;transform:translateY(105%);transition:transform .3s;z-index:10;border-top:1px solid var(--stone-line);border-left:0;box-shadow:0 -10px 30px #000a}
+  #panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:62vh;max-height:62dvh;transform:translateY(105%);transition:transform .3s;z-index:10;border-top:1px solid var(--stone-line);border-left:0;box-shadow:0 -10px 30px #000a;border-radius:16px 16px 0 0;padding-bottom:max(16px,env(safe-area-inset-bottom));overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   body.panel-open #panel{transform:none}
   #legend{display:none}
+  /* kompaktes Kopfband: Zeile 1 = Titel + Fortschritt + ⋯, Zeile 2 = Aktionen, Zeile 3 (optional) = Export */
+  #top{padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));gap:8px}
+  #top h1{font-size:13px;letter-spacing:.02em;order:1}
+  #prog{order:2;min-width:0;flex:1 1 0;gap:8px}
+  #btnMore{display:inline-block;order:3;min-height:34px;min-width:44px;padding:2px 8px}
+  #top .br{display:block;order:4;flex:0 0 100%;height:0;margin:-8px 0 0}
+  #btnNext{order:5;flex:1 1 0;min-width:0;padding:9px 11px;min-height:40px;white-space:nowrap}
+  #btnPanel{order:6;min-height:40px;min-width:44px}
+  #save{order:7;max-width:32vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:40px}
+  #btnInstall{order:8;min-height:40px}
+  #offline{display:none!important}
+  #top .exp{display:none;order:10}
+  #top.more .exp{display:inline-block;min-height:40px}
+  /* Bedienelemente groß genug zum Antippen; 16px verhindert das automatische Hineinzoomen auf dem iPhone */
+  .field input[type=text],.field input[type=password],.field input[type=date],.field input[type=number],.field select,.field textarea,.addopt input{font-size:16px}
+  .opt{padding:11px 12px}
+  .btn{min-height:36px}
+  #pClose{min-width:44px;min-height:44px;font-size:16px}
+  #zoom{bottom:max(12px,env(safe-area-inset-bottom))}
+  #zoom .btn{width:44px;height:44px}
+  #toast{bottom:max(22px,calc(env(safe-area-inset-bottom) + 10px))}
 }
+@media(max-width:400px){ #btnNext .lg{display:none} #btnNext .sm{display:inline} }
+@media(max-width:860px) and (max-height:520px){
+  /* Handy quer: Panel als Seitenleiste, damit die Karte sichtbar bleibt */
+  #panel{left:auto;width:min(380px,55vw);top:var(--topH,57px);bottom:0;max-height:none;border-radius:0;border-left:1px solid var(--stone-line);box-shadow:-10px 0 30px #000a;transform:translateX(105%)}
+  body.panel-open #panel{transform:none}
+  #top h1{display:none}
+  #top .br{display:none}
+  #top{padding-top:max(6px,env(safe-area-inset-top));padding-bottom:6px}
+  #btnNext,#btnPanel,#save,#btnMore{min-height:36px}
+  #btnNext{flex:0 0 auto}
+}
+button,.btn,.opt,.need,.brrow{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </style>
 </head>
 <body>
 <header id="top">
   <h1>LANDINGPAGE <span>QUEST</span></h1>
+  <span class="br"></span>
   <div id="prog"><div id="bar"><i></i></div><span id="progTxt"></span></div>
   <button class="btn small" id="btnInstall" title="Als App auf diesem Gerät installieren">⤓ App installieren</button>
   <span id="offline">Offline</span>
-  <button class="btn primary" id="btnNext" title="Zum nächsten freien Schritt springen">▶ Nächster Schritt</button>
+  <button class="btn primary" id="btnNext" title="Zum nächsten freien Schritt springen">▶ <span class="lg">Nächster Schritt</span><span class="sm">Weiter</span></button>
   <button class="btn" id="btnPanel">☰</button>
   <button id="save" class="" title=""></button>
-  <button class="btn small" id="btnMd" title="Ergebnisse als Markdown herunterladen">⬇ MD</button>
-  <button class="btn small" id="btnJson" title="Fortschritt als JSON sichern">⬇ JSON</button>
-  <button class="btn small" id="btnImport" title="JSON-Fortschritt laden">⬆ Laden</button>
-  <button class="btn small" id="btnReset" title="Alles zurücksetzen">↺</button>
+  <button class="btn" id="btnMore" title="Export / Import" aria-label="Mehr">⋯</button>
+  <button class="btn small exp" id="btnMd" title="Ergebnisse als Markdown herunterladen">⬇ MD</button>
+  <button class="btn small exp" id="btnJson" title="Fortschritt als JSON sichern">⬇ JSON</button>
+  <button class="btn small exp" id="btnImport" title="JSON-Fortschritt laden">⬆ Laden</button>
+  <button class="btn small exp" id="btnReset" title="Alles zurücksetzen">↺</button>
   <input type="file" id="file" accept=".json,application/json" hidden>
 </header>
 <div id="main">
@@ -550,8 +588,15 @@ const MINS=.1, MAXS=2.5, clampS=s=>Math.min(MAXS,Math.max(MINS,s));
 /* Bildmitte der Karte (bei offenem Handy-Panel nach oben verschoben) */
 function viewOrigin(){
   const W=view.clientWidth,H=view.clientHeight;
-  const sheet = window.innerWidth<=860 && document.body.classList.contains('panel-open');
-  return {W,H,ox:W/2,oy: sheet ? Math.max(60,(window.innerHeight*0.34-view.getBoundingClientRect().top)/2) : H/2};
+  const open = window.innerWidth<=860 && document.body.classList.contains('panel-open');
+  const side = open && window.matchMedia('(max-height:520px)').matches;   /* Handy quer: Panel steht rechts daneben */
+  const sheet = open && !side;
+  if(side) return {W,H,ox:Math.max(80,(W-panel.offsetWidth)/2),oy:H/2};
+  if(sheet){   /* Karte in den sichtbaren Bereich über dem Panel zentrieren (etwas höher, da das Label unter dem Knoten steht) */
+    const ph=Math.min(panel.scrollHeight,window.innerHeight*0.62), vis=window.innerHeight-ph-view.getBoundingClientRect().top;
+    return {W,H,ox:W/2,oy:Math.max(36,vis/2-14)};
+  }
+  return {W,H,ox:W/2,oy:H/2};
 }
 /* Die Karte ist ein 2000×2000-SVG; die Kamera ist eine CSS-Transformation auf einer eigenen
    Grafikebene → Verschieben/Zoomen skaliert nur die fertige Textur (GPU) statt neu zu zeichnen.
@@ -693,7 +738,14 @@ function endPointer(e,cancelled){
   const was=drag; drag=null; view.classList.remove('drag');
   if(was && !was.moved && !cancelled){
     const t=document.elementFromPoint(e.clientX,e.clientY);
-    const g=t && t.closest && t.closest('.node');
+    let g=t && t.closest && t.closest('.node');
+    if(!g && e.pointerType!=='mouse'){   /* Finger sind ungenau: nächsten Knoten im Umkreis von ~26px nehmen */
+      const r=view.getBoundingClientRect(), v=viewOrigin();
+      const wx=cam.x+(e.clientX-r.left-v.ox)/cam.s, wy=cam.y+(e.clientY-r.top-v.oy)/cam.s;
+      let best=null, bd=Infinity;
+      NODES.forEach(n=>{ const d=Math.hypot(n.x-wx,n.y-wy)-(n.r||0); if(d<bd){bd=d;best=n;} });
+      if(best && bd*cam.s<=26) g={dataset:{id:best.id}};
+    }
     if(g) selectNode(g.dataset.id);
     else { sel=null; markSel(); if(window.innerWidth<=860) document.body.classList.remove('panel-open'); applyCam(); renderPanel(); }
   }
@@ -725,7 +777,7 @@ function selectNode(id,fly=true){
   sel=id; const n=BY[id], locked=status(n)==='locked';
   if(!locked) (n.f||[]).forEach(f=>{ const d=nd(id); if(f.def!==undefined && d.v[f.k]===undefined) d.v[f.k]=f.def; });
   document.body.classList.add('panel-open');
-  markSel(); renderPanel();
+  markSel(); renderPanel(); panel.scrollTop=0;
   if(!locked) moveChars(id);
   if(fly) flyTo(n.x,n.y,Math.max(cam.s,.95)); else applyCam();
 }
@@ -903,6 +955,10 @@ document.getElementById('btnNext').onclick=()=>{
   const cur=op.findIndex(n=>n.id===(sel||S.pos));
   selectNode(op[(cur+1)%op.length].id);
 };
+const topEl=document.getElementById('top');
+const syncTop=()=>document.documentElement.style.setProperty('--topH',topEl.offsetHeight+'px');
+if(window.ResizeObserver) new ResizeObserver(syncTop).observe(topEl); window.addEventListener('resize',syncTop); syncTop();
+document.getElementById('btnMore').onclick=()=>{topEl.classList.toggle('more');syncTop();};
 document.getElementById('btnPanel').onclick=()=>{document.body.classList.toggle('panel-open');applyCam();};
 document.getElementById('btnMd').onclick=()=>download(FILE_MD,toMarkdown(),'text/markdown');
 document.getElementById('btnJson').onclick=()=>download(FILE_JSON,JSON.stringify(S,null,2),'application/json');
