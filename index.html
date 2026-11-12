@@ -163,6 +163,23 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
 @keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
 .brlabel{font-size:13px;font-weight:700;letter-spacing:.12em;text-anchor:middle;fill:var(--c);opacity:.75;pointer-events:none;text-transform:uppercase}
 
+/* Live-Anwesenheit */
+#whoChip{position:absolute;left:12px;top:12px;z-index:5;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 8px;border-radius:99px;background:#0c0a1fdd;min-height:34px}
+#whoChip[hidden],#whoPop[hidden]{display:none}
+#whoChip .dot{width:9px;height:9px;border-radius:50%;background:#5cf09a;box-shadow:0 0 8px #5cf09a99;flex:none}
+#whoChip .avs{display:flex}
+#whoChip .avs .av{margin-left:-7px;border:2px solid #0c0a1f}
+#whoChip .avs .av:first-child{margin-left:0}
+.av{--h:200;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#07102a;background:hsl(var(--h) 80% 70%);flex:none}
+#whoPop{position:absolute;left:12px;top:54px;z-index:6;min-width:230px;max-width:min(340px,calc(100% - 24px));max-height:50%;overflow:auto;background:var(--panel);border:1px solid var(--stone-line);border-radius:14px;padding:6px;box-shadow:0 10px 30px #000a}
+.who-row{display:flex;gap:10px;align-items:center;padding:8px;border-radius:9px;color:var(--text);width:100%;text-align:left;background:none;border:0}
+.who-row.go{cursor:pointer}
+.who-row.go:hover{background:var(--stone)}
+.who-row .av{width:30px;height:30px;font-size:13px}
+.who-row .nm{font-weight:600;font-size:14px}
+.who-row .st{font-size:12px;color:var(--muted)}
+.pbadge circle{stroke:#0c0a1f;stroke-width:2.5}
+.pbadge text{font-size:11px;font-weight:700;fill:#07102a;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 #btnMore{display:none}
 #btnNext .sm{display:none}
 #top .br{display:none}
@@ -188,6 +205,9 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
   .field input[type=text],.field input[type=password],.field input[type=date],.field input[type=number],.field select,.field textarea,.addopt input{font-size:16px}
   .opt{padding:11px 12px}
   .btn{min-height:36px}
+  #whoChip{min-height:40px}
+  #whoPop{top:60px}
+  .who-row{min-height:44px}
   #pClose{min-width:44px;min-height:44px;font-size:16px}
   #zoom{bottom:max(12px,env(safe-area-inset-bottom))}
   #zoom .btn{width:44px;height:44px}
@@ -231,8 +251,10 @@ button,.btn,.opt,.need,.brrow{touch-action:manipulation;-webkit-tap-highlight-co
         <pattern id="pin" width="4" height="8" patternUnits="userSpaceOnUse"><rect width="4" height="8" fill="#1d2b57"/><rect x="1.6" width=".7" height="8" fill="#6d86c9"/></pattern>
         <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ef0ff" stop-opacity="0"/><stop offset=".6" stop-color="#5ef0ff" stop-opacity=".55"/><stop offset="1" stop-color="#ff5fa2" stop-opacity=".9"/></linearGradient>
       </defs>
-      <g id="world"><g id="gLabels"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gChars"></g><g id="gFx"></g></g></svg></div>
+      <g id="world"><g id="gLabels"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gPres"></g><g id="gChars"></g><g id="gFx"></g></g></svg></div>
     <div id="legend"><span><b style="background:#3d3872"></b>gesperrt</span><span><b style="background:#5ef0ff"></b>jetzt dran</span><span><b style="background:#ff5fa2"></b>geschafft</span><span>Ziel = Mitte · Start = außen</span></div>
+    <button class="btn" id="whoChip" hidden aria-haspopup="true" aria-expanded="false"></button>
+    <div id="whoPop" hidden role="list"></div>
     <div id="zoom"><button class="btn" id="zIn">+</button><button class="btn" id="zOut">−</button><button class="btn" id="zFit" title="Alles anzeigen">⤢</button></div>
   </div>
   <aside id="panel"></aside>
@@ -770,6 +792,7 @@ function openNodes(){ return NODES.filter(n=>status(n)==='open'); }
 
 /* Auswahl nur per Klasse umschalten – die Karte wird dafür nicht neu aufgebaut */
 function markSel(){
+  if(typeof schedulePres==='function') schedulePres();
   gNodes.querySelectorAll('.node.sel').forEach(g=>g.classList.remove('sel'));
   if(sel){ const g=gNodes.querySelector(`.node[data-id="${sel}"]`); if(g) g.classList.add('sel'); }
 }
@@ -1245,6 +1268,7 @@ function showGate(msg){
   setTimeout(()=>document.getElementById(document.getElementById('gName').value?'gCode':'gName').focus(),50);
 }
 function logoutOnline(msg){
+  stopPresence();
   clearInterval(SYNC.loop); clearTimeout(SYNC.timer); SYNC.loop=null; SYNC.code=null; SYNC.since=null; SYNC.online=null;
   try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); localStorage.setItem(AUTH_KEY,JSON.stringify({name:a&&a.name||SYNC.name||''})); }catch(e){}
   showGate(msg);
@@ -1252,6 +1276,7 @@ function logoutOnline(msg){
 function startLoop(){
   SYNC.since=null; tick();
   clearInterval(SYNC.loop); SYNC.loop=setInterval(tick,2500);
+  startPresence();
 }
 async function startOnline(){
   loadBase();
@@ -1275,6 +1300,87 @@ async function startOnline(){
     btn.disabled=false;
   });
 }
+
+
+/* ============================================================
+   LIVE-ANWESENHEIT – wer hat die App gerade offen (nur gemeinsamer Modus)
+   Herzschlag alle 8 s, solange die Seite sichtbar ist; nach ~25 s ohne Herzschlag gilt jemand als weg.
+   ============================================================ */
+const PRES={id:null,users:[],ok:false,timer:null,deb:null,open:false};
+try{ PRES.id=localStorage.getItem('lpq-client'); }catch(e){}
+if(!PRES.id){ PRES.id=(window.crypto&&crypto.randomUUID?crypto.randomUUID():('c'+Math.random().toString(36).slice(2)+Date.now().toString(36))); try{ localStorage.setItem('lpq-client',PRES.id); }catch(e){} }
+const whoChip=document.getElementById('whoChip'), whoPop=document.getElementById('whoPop'), gPres=document.getElementById('gPres');
+const hueOf=name=>{ let h=0; for(const c of String(name)) h=(h*31+c.codePointAt(0))%360; return h; };
+const initialOf=name=>(String(name).trim().charAt(0)||'?').toUpperCase();
+function avHTML(name){ return `<span class="av" style="--h:${hueOf(name)}">${esc(initialOf(name))}</span>`; }
+function presBody(leave){ return {p_code:SYNC.code,p_client:PRES.id,p_name:SYNC.name||'Gast',p_node:sel||null,p_leave:!!leave}; }
+async function presTick(){
+  if(!ONLINE||!SYNC.code||document.visibilityState==='hidden') return;
+  try{
+    const r=await api('quest_presence',presBody(false));
+    if(!r.ok){ PRES.ok=false; PRES.users=[]; renderPresence(); return; }   /* Anmeldefehler behandelt der normale Abgleich */
+    PRES.ok=true; PRES.users=r.users||[];
+  }catch(e){ PRES.ok=false; PRES.users=[]; }
+  renderPresence();
+}
+function schedulePres(){ if(!ONLINE||!SYNC.code) return; clearTimeout(PRES.deb); PRES.deb=setTimeout(presTick,500); }
+function presLeave(){
+  if(!ONLINE||!SYNC.code) return;
+  try{ fetch(ONLINE.url+'/rest/v1/rpc/quest_presence',{method:'POST',keepalive:true,headers:{apikey:ONLINE.key,Authorization:'Bearer '+ONLINE.key,'Content-Type':'application/json'},body:JSON.stringify(presBody(true))}).catch(()=>{}); }catch(e){}
+}
+function startPresence(){
+  stopPresence(true); presTick(); PRES.timer=setInterval(presTick,8000);
+}
+function stopPresence(quiet){
+  clearInterval(PRES.timer); PRES.timer=null; clearTimeout(PRES.deb);
+  if(!quiet) presLeave();
+  PRES.ok=false; PRES.users=[]; renderPresence();
+}
+document.addEventListener('visibilitychange',()=>{
+  if(!ONLINE||!SYNC.code) return;
+  if(document.visibilityState==='hidden'){ clearInterval(PRES.timer); PRES.timer=null; presLeave(); }
+  else startPresence();
+});
+window.addEventListener('pagehide',presLeave);
+const othersOnline=()=>PRES.users.filter(u=>u.client!==PRES.id);
+function whereHTML(u){ const n=u.node&&BY[u.node]; return n?`arbeitet an: ${esc(n.t)}`:'schaut sich um'; }
+function renderPresence(){
+  if(!ONLINE||!SYNC.code||!PRES.ok){ whoChip.hidden=true; whoPop.hidden=true; PRES.open=false; drawPresBadges([]); return; }
+  const others=othersOnline(), total=others.length+1;
+  whoChip.hidden=false;
+  whoChip.innerHTML=`<span class="dot"></span>`+(others.length?`<span class="avs">${others.slice(0,3).map(u=>avHTML(u.name)).join('')}</span><span>${others.length>3?'+'+(others.length-3)+' · ':''}${total} online</span>`:`<span>Nur du online</span>`);
+  whoChip.setAttribute('aria-expanded',PRES.open?'true':'false');
+  whoChip.title=others.map(u=>u.name).join(', ')||'Gerade ist niemand sonst online';
+  if(PRES.open){
+    const me={name:SYNC.name||'Gast',node:sel};
+    whoPop.innerHTML=[`<div class="who-row" role="listitem">${avHTML(me.name)}<div><div class="nm">${esc(me.name)} (du)</div><div class="st">${whereHTML(me)}</div></div></div>`]
+      .concat(others.map(u=>`<button class="who-row${u.node&&BY[u.node]?' go':''}" role="listitem" data-node="${esc(u.node||'')}">${avHTML(u.name)}<div><div class="nm">${esc(u.name)}</div><div class="st">${whereHTML(u)}</div></div></button>`)).join('');
+    whoPop.hidden=false;
+  } else whoPop.hidden=true;
+  drawPresBadges(others);
+}
+/* kleine Markierung am Schritt, an dem jemand gerade arbeitet */
+function drawPresBadges(others){
+  while(gPres.firstChild) gPres.removeChild(gPres.firstChild);
+  const perNode={};
+  others.forEach(u=>{ if(u.node&&BY[u.node]) (perNode[u.node] ||= []).push(u); });
+  Object.keys(perNode).forEach(id=>{
+    const n=BY[id];
+    perNode[id].slice(0,4).forEach((u,i)=>{
+      const g=el('g',{class:'pbadge',transform:`translate(${n.x+n.r*0.85+i*19},${n.y-n.r*0.85})`},gPres);
+      el('circle',{r:11,fill:`hsl(${hueOf(u.name)} 80% 70%)`},g);
+      const t=el('text',{},g); t.textContent=initialOf(u.name);
+      const ti=el('title',{},g); ti.textContent=u.name;
+    });
+  });
+}
+whoChip.addEventListener('click',e=>{ e.stopPropagation(); PRES.open=!PRES.open; renderPresence(); });
+whoPop.addEventListener('click',e=>{
+  const b=e.target.closest('[data-node]'); if(!b) return; e.stopPropagation();
+  const id=b.dataset.node; if(id&&BY[id]){ PRES.open=false; renderPresence(); selectNode(id); }
+});
+document.addEventListener('click',e=>{ if(PRES.open&&!whoPop.contains(e.target)&&e.target!==whoChip){ PRES.open=false; renderPresence(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&PRES.open){ PRES.open=false; renderPresence(); } });
 
 /* Start */
 applyCam(); renderAll();
