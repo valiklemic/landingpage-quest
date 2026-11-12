@@ -172,14 +172,13 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
 #whoChip .avs .av:first-child{margin-left:0}
 .av{--h:200;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#07102a;background:hsl(var(--h) 80% 70%);flex:none}
 #whoPop{position:absolute;left:12px;top:54px;z-index:6;min-width:230px;max-width:min(340px,calc(100% - 24px));max-height:50%;overflow:auto;background:var(--panel);border:1px solid var(--stone-line);border-radius:14px;padding:6px;box-shadow:0 10px 30px #000a}
+.ptag{font-size:12px;font-weight:700;text-anchor:middle;paint-order:stroke;stroke:#0c0a1f;stroke-width:3.5px;pointer-events:none}
 .who-row{display:flex;gap:10px;align-items:center;padding:8px;border-radius:9px;color:var(--text);width:100%;text-align:left;background:none;border:0}
 .who-row.go{cursor:pointer}
 .who-row.go:hover{background:var(--stone)}
 .who-row .av{width:30px;height:30px;font-size:13px}
 .who-row .nm{font-weight:600;font-size:14px}
 .who-row .st{font-size:12px;color:var(--muted)}
-.pbadge circle{stroke:#0c0a1f;stroke-width:2.5}
-.pbadge text{font-size:11px;font-weight:700;fill:#07102a;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 #btnMore{display:none}
 #btnNext .sm{display:none}
 #top .br{display:none}
@@ -251,7 +250,7 @@ button,.btn,.opt,.need,.brrow{touch-action:manipulation;-webkit-tap-highlight-co
         <pattern id="pin" width="4" height="8" patternUnits="userSpaceOnUse"><rect width="4" height="8" fill="#1d2b57"/><rect x="1.6" width=".7" height="8" fill="#6d86c9"/></pattern>
         <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ef0ff" stop-opacity="0"/><stop offset=".6" stop-color="#5ef0ff" stop-opacity=".55"/><stop offset="1" stop-color="#ff5fa2" stop-opacity=".9"/></linearGradient>
       </defs>
-      <g id="world"><g id="gLabels"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gPres"></g><g id="gChars"></g><g id="gFx"></g></g></svg></div>
+      <g id="world"><g id="gLabels"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gChars"></g><g id="gFx"></g></g></svg></div>
     <div id="legend"><span><b style="background:#3d3872"></b>gesperrt</span><span><b style="background:#5ef0ff"></b>jetzt dran</span><span><b style="background:#ff5fa2"></b>geschafft</span><span>Ziel = Mitte · Start = außen</span></div>
     <button class="btn" id="whoChip" hidden aria-haspopup="true" aria-expanded="false"></button>
     <div id="whoPop" hidden role="list"></div>
@@ -548,7 +547,7 @@ async function syncFromDir(){
     const d=JSON.parse(txt);
     if(d && d.nodes && (d.updatedAt||0) > (S.updatedAt||0)){
       S=d; try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
-      sel=null; if(chars.length) resetChars();
+      sel=null; if(meP) resetChars();
       toast('Fortschritt aus der gespeicherten Datei geladen.');
     }
   }catch(e){ /* Datei existiert noch nicht */ }
@@ -1048,21 +1047,44 @@ const SPRITE = {
     <circle class="ear" cx="-8.6" cy="-58.5" r="2" fill="#5ef0ff"/>
   </g>`
 };
-const chars=[];
+/* Jede Person hat ihr eigenes Figurenpaar: meine (meP) und je eine Gruppe für jede andere online befindliche Person.
+   Meine Figuren laufen nur durch MEINE Aktionen; die der anderen folgen deren Standort aus der Live-Anwesenheit. */
+const parties=[]; let meP=null;
 function mkChar(k){
   const g=el('g',{class:'ch'},gChars), fxw=el('g',{},g), flip=el('g',{},fxw);
   flip.innerHTML=SPRITE[k];
-  return {k,g,fxw,flip,x:0,y:0,dir:1};
+  const ring=el('ellipse',{class:'pring',cx:0,cy:2,rx:k==='t'?25:18,ry:6,display:'none'},g); g.insertBefore(ring,fxw);
+  const tag=k==='t'?el('text',{class:'ptag',y:-78,display:'none'},g):null;
+  return {k,g,fxw,flip,ring,tag,x:0,y:0,dir:1,slot:0};
 }
-const nodePos=(id,c)=>{ const n=BY[id]; return {x:n.x+(c.k==='s'?-(n.r+18):(n.r+22)), y:n.y+n.r*.45}; };
+/* Aussehen: Farbring unter den Füßen, Namensschild über dem großen Charakter, Ohrstück in der Personenfarbe */
+function setPartyLook(P,label,hue){
+  P.label=label; P.hue=hue;
+  P.chars.forEach(c=>{
+    const on=label!=null, col=`hsl(${hue||0} 85% 68%)`;
+    c.ring.setAttribute('display',on?'':'none'); c.ring.setAttribute('stroke',col); c.ring.setAttribute('stroke-width','2'); c.ring.setAttribute('fill',`hsl(${hue||0} 85% 68% / .22)`);
+    if(c.tag){ c.tag.setAttribute('display',on?'':'none'); c.tag.setAttribute('fill',col); c.tag.textContent=label||''; }
+    c.flip.querySelectorAll('.ear').forEach(e=>e.setAttribute('fill',on?col:'#5ef0ff'));
+  });
+}
+function mkParty(key){ const P={key,label:null,hue:0,pos:null,tok:0,slot:0,chars:[mkChar('t'),mkChar('s')]}; parties.push(P); return P; }
+const partyPos=P=>P===meP?S.pos:P.pos;
+const setPartyPos=(P,id)=>{ if(P===meP) S.pos=id; else P.pos=id; };
+/* Mehrere Personen am selben Schritt stehen nebeneinander: meine innen, die anderen weiter außen */
+function pickSlot(P,id){
+  if(P===meP) return 0;
+  const used=new Set(); parties.forEach(Q=>{ if(Q!==P && partyPos(Q)===id) used.add(Q.slot); });
+  let sl=1; while(used.has(sl)&&sl<4) sl++; return sl;
+}
+const nodePos=(id,c)=>{ const n=BY[id], sl=c.slot||0; return {x:n.x+(c.k==='s'?-(n.r+18+36*sl):(n.r+22+36*sl)), y:n.y+n.r*.45}; };
 function setC(c,x,y){ c.x=x; c.y=y; c.g.setAttribute('transform',`translate(${x},${y})`); }
 function faceC(c,dx){ if(Math.abs(dx)<.5) return; c.dir=dx<0?-1:1; c.flip.setAttribute('transform',`scale(${c.dir},1)`); }
 function idleFace(c){ faceC(c,c.k==='s'?1:-1); }
 function cancelFx(c){ c.fxw.getAnimations().forEach(a=>a.cancel()); c.g.classList.remove('walk'); }
-function placeChars(id){ chars.forEach(c=>{ const p=nodePos(id,c); setC(c,p.x,p.y); idleFace(c); }); }
-function resetChars(){
-  moveTok++; const id=(S.pos&&BY[S.pos])?S.pos:(openNodes()[0]||BY.A1).id; S.pos=id;
-  chars.forEach(cancelFx); placeChars(id);
+function placeParty(P,id){ P.slot=pickSlot(P,id); P.chars.forEach(c=>{ c.slot=P.slot; const p=nodePos(id,c); setC(c,p.x,p.y); idleFace(c); }); }
+function resetChars(){   /* meine Figuren an ihren gespeicherten Standort */
+  const P=meP; P.tok++; const id=(S.pos&&BY[S.pos])?S.pos:(openNodes()[0]||BY.A1).id; S.pos=id;
+  P.chars.forEach(cancelFx); placeParty(P,id);
 }
 /* Weg nur innerhalb eines Zweigs (inkl. Ziel in der Mitte) – sonst null = teleportieren */
 function pathBetween(a,b){
@@ -1074,25 +1096,25 @@ function pathBetween(a,b){
   if(i<0||j<0) return null;
   return i<j ? seq.slice(i,j+1) : seq.slice(j,i+1).reverse();
 }
-let moveTok=0;
-function moveChars(id,silent){
-  if(!chars.length) return;
-  const from=S.pos&&BY[S.pos]?S.pos:id;
-  if(from===id && S.pos===id) return;
-  moveTok++; const tok=moveTok;
+function moveParty(P,id,silent){
+  const cur=partyPos(P), from=cur&&BY[cur]?cur:id;
+  if(from===id && cur===id) return;
+  P.tok++; const tok=P.tok;
   /* Mitten im Teleport (unsichtbar) → sofort am alten Ziel absetzen; mitten im Laufen → von der aktuellen Stelle weiterlaufen */
-  chars.forEach(c=>{ const midTp=c.fxw.getAnimations().length>0; cancelFx(c); if(midTp){ const p=nodePos(from,c); setC(c,p.x,p.y); idleFace(c); } });
-  S.pos=id; if(!silent) persist();
+  P.chars.forEach(c=>{ const midTp=c.fxw.getAnimations().length>0; cancelFx(c); if(midTp){ const p=nodePos(from,c); setC(c,p.x,p.y); idleFace(c); } });
+  setPartyPos(P,id); if(P===meP && !silent) persist();
+  P.slot=pickSlot(P,id); P.chars.forEach(c=>{ c.slot=P.slot; });
   const path=pathBetween(from,id);
-  if(path) walk(path,tok); else teleport(id,tok);
+  if(path) walk(P,path,tok); else teleport(P,id,tok);
 }
-function walk(path,tok){
-  chars.forEach((c,ci)=>{
+const moveChars=(id,silent)=>{ if(meP) moveParty(meP,id,silent); };
+function walk(P,path,tok){
+  P.chars.forEach((c,ci)=>{
     const pts=[{x:c.x,y:c.y},...path.map(id=>nodePos(id,c))], segs=[]; let total=0;
     for(let i=1;i<pts.length;i++){ const d=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y); segs.push(d); total+=d; }
     const speed=Math.max(240,total/2.2), t0=performance.now()+ci*320;   /* lange Wege dauern höchstens ~2 s */
     (function step(now){
-      if(tok!==moveTok) return;
+      if(tok!==P.tok) return;
       let dist=(now-t0)/1000*speed;
       if(dist<=0){ requestAnimationFrame(step); return; }
       if(dist>=total){ const e=pts[pts.length-1]; setC(c,e.x,e.y); c.g.classList.remove('walk'); idleFace(c); return; }
@@ -1112,14 +1134,14 @@ function beam(x,y){
   e.style.transformBox='fill-box'; e.style.transformOrigin='center';
   e.animate([{opacity:.95,transform:'scale(.4)'},{opacity:0,transform:'scale(3)'}],{duration:700}).onfinish=()=>e.remove();
 }
-function teleport(id,tok){
-  chars.forEach((c,ci)=>setTimeout(()=>{
-    if(tok!==moveTok) return;
+function teleport(P,id,tok){
+  P.chars.forEach((c,ci)=>setTimeout(()=>{
+    if(tok!==P.tok) return;
     beam(c.x,c.y);
     c.fxw.animate([{transform:'scale(1,1)',opacity:1,filter:'brightness(1)'},{transform:'scale(.12,1.9)',opacity:0,filter:'brightness(3.5)'}],{duration:330,easing:'ease-in',fill:'forwards'}).onfinish=()=>{
-      if(tok!==moveTok) return;
+      if(tok!==P.tok) return;
       const p=nodePos(id,c); setC(c,p.x,p.y); idleFace(c); beam(p.x,p.y);
-      c.fxw.animate([{transform:'scale(.12,1.9)',opacity:0,filter:'brightness(3.5)'},{transform:'scale(1,1)',opacity:1,filter:'brightness(1)'}],{duration:400,easing:'ease-out',fill:'forwards'}).onfinish=()=>{ if(tok===moveTok) c.fxw.getAnimations().forEach(a=>a.cancel()); };
+      c.fxw.animate([{transform:'scale(.12,1.9)',opacity:0,filter:'brightness(3.5)'},{transform:'scale(1,1)',opacity:1,filter:'brightness(1)'}],{duration:400,easing:'ease-out',fill:'forwards'}).onfinish=()=>{ if(tok===P.tok) c.fxw.getAnimations().forEach(a=>a.cancel()); };
     };
   }, ci*170));
 }
@@ -1168,11 +1190,6 @@ async function pushDiffs(){
     if(!r.ok){ if(r.error==='unauthorized'||r.error==='locked') throw authErr(r); throw new Error(r.error); }
     applyPatchToBase(n.id,p); SYNC.at[n.id]=r.at; SYNC.by[n.id]=SYNC.name;
   }
-  if(S.pos && S.pos!==SYNC.base.pos){
-    const r=await api('quest_put_meta',{p_code:SYNC.code,p_key:'pos',p_value:S.pos,p_who:SYNC.name});
-    if(!r.ok){ if(r.error==='unauthorized'||r.error==='locked') throw authErr(r); throw new Error(r.error); }
-    SYNC.base.pos=S.pos;
-  }
 }
 async function pull(){
   const r=await api('quest_get',{p_code:SYNC.code,p_since:SYNC.since});
@@ -1200,13 +1217,6 @@ async function pull(){
     }
   });
   let posMove=null;
-  r.meta.forEach(m=>{
-    if(m.key==='pos' && m.value && BY[m.value]){
-      const old=SYNC.base.pos; SYNC.base.pos=m.value;
-      if(firstLoad){ S.pos=m.value; posMove='reset'; }
-      else if(S.pos===old && S.pos!==m.value) posMove=m.value;
-    }
-  });
   SYNC.since=r.server_time; SYNC.first=false;
   try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
   /* Anzeige aktualisieren */
@@ -1268,7 +1278,7 @@ function showGate(msg){
   setTimeout(()=>document.getElementById(document.getElementById('gName').value?'gCode':'gName').focus(),50);
 }
 function logoutOnline(msg){
-  stopPresence();
+  stopPresence(); if(meP) setPartyLook(meP,null,0);
   clearInterval(SYNC.loop); clearTimeout(SYNC.timer); SYNC.loop=null; SYNC.code=null; SYNC.since=null; SYNC.online=null;
   try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); localStorage.setItem(AUTH_KEY,JSON.stringify({name:a&&a.name||SYNC.name||''})); }catch(e){}
   showGate(msg);
@@ -1276,7 +1286,7 @@ function logoutOnline(msg){
 function startLoop(){
   SYNC.since=null; tick();
   clearInterval(SYNC.loop); SYNC.loop=setInterval(tick,2500);
-  startPresence();
+  startPresence(); updateMeLook();
 }
 async function startOnline(){
   loadBase();
@@ -1309,11 +1319,11 @@ async function startOnline(){
 const PRES={id:null,users:[],ok:false,timer:null,deb:null,open:false};
 try{ PRES.id=localStorage.getItem('lpq-client'); }catch(e){}
 if(!PRES.id){ PRES.id=(window.crypto&&crypto.randomUUID?crypto.randomUUID():('c'+Math.random().toString(36).slice(2)+Date.now().toString(36))); try{ localStorage.setItem('lpq-client',PRES.id); }catch(e){} }
-const whoChip=document.getElementById('whoChip'), whoPop=document.getElementById('whoPop'), gPres=document.getElementById('gPres');
+const whoChip=document.getElementById('whoChip'), whoPop=document.getElementById('whoPop');
 const hueOf=name=>{ let h=0; for(const c of String(name)) h=(h*31+c.codePointAt(0))%360; return h; };
 const initialOf=name=>(String(name).trim().charAt(0)||'?').toUpperCase();
 function avHTML(name){ return `<span class="av" style="--h:${hueOf(name)}">${esc(initialOf(name))}</span>`; }
-function presBody(leave){ return {p_code:SYNC.code,p_client:PRES.id,p_name:SYNC.name||'Gast',p_node:sel||null,p_leave:!!leave}; }
+function presBody(leave){ return {p_code:SYNC.code,p_client:PRES.id,p_name:SYNC.name||'Gast',p_node:S.pos||null,p_leave:!!leave}; }
 async function presTick(){
   if(!ONLINE||!SYNC.code||document.visibilityState==='hidden') return;
   try{
@@ -1343,37 +1353,38 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('pagehide',presLeave);
 const othersOnline=()=>PRES.users.filter(u=>u.client!==PRES.id);
-function whereHTML(u){ const n=u.node&&BY[u.node]; return n?`arbeitet an: ${esc(n.t)}`:'schaut sich um'; }
+function whereHTML(u){ const n=u.node&&BY[u.node]; return n?`bei: ${esc(n.t)}`:'schaut sich um'; }
 function renderPresence(){
-  if(!ONLINE||!SYNC.code||!PRES.ok){ whoChip.hidden=true; whoPop.hidden=true; PRES.open=false; drawPresBadges([]); return; }
+  if(!ONLINE||!SYNC.code||!PRES.ok){ whoChip.hidden=true; whoPop.hidden=true; PRES.open=false; syncOtherParties([]); return; }
   const others=othersOnline(), total=others.length+1;
   whoChip.hidden=false;
   whoChip.innerHTML=`<span class="dot"></span>`+(others.length?`<span class="avs">${others.slice(0,3).map(u=>avHTML(u.name)).join('')}</span><span>${others.length>3?'+'+(others.length-3)+' · ':''}${total} online</span>`:`<span>Nur du online</span>`);
   whoChip.setAttribute('aria-expanded',PRES.open?'true':'false');
   whoChip.title=others.map(u=>u.name).join(', ')||'Gerade ist niemand sonst online';
   if(PRES.open){
-    const me={name:SYNC.name||'Gast',node:sel};
+    const me={name:SYNC.name||'Gast',node:S.pos};
     whoPop.innerHTML=[`<div class="who-row" role="listitem">${avHTML(me.name)}<div><div class="nm">${esc(me.name)} (du)</div><div class="st">${whereHTML(me)}</div></div></div>`]
       .concat(others.map(u=>`<button class="who-row${u.node&&BY[u.node]?' go':''}" role="listitem" data-node="${esc(u.node||'')}">${avHTML(u.name)}<div><div class="nm">${esc(u.name)}</div><div class="st">${whereHTML(u)}</div></div></button>`)).join('');
     whoPop.hidden=false;
   } else whoPop.hidden=true;
-  drawPresBadges(others);
+  syncOtherParties(others);
 }
-/* kleine Markierung am Schritt, an dem jemand gerade arbeitet */
-function drawPresBadges(others){
-  while(gPres.firstChild) gPres.removeChild(gPres.firstChild);
-  const perNode={};
-  others.forEach(u=>{ if(u.node&&BY[u.node]) (perNode[u.node] ||= []).push(u); });
-  Object.keys(perNode).forEach(id=>{
-    const n=BY[id];
-    perNode[id].slice(0,4).forEach((u,i)=>{
-      const g=el('g',{class:'pbadge',transform:`translate(${n.x+n.r*0.85+i*19},${n.y-n.r*0.85})`},gPres);
-      el('circle',{r:11,fill:`hsl(${hueOf(u.name)} 80% 70%)`},g);
-      const t=el('text',{},g); t.textContent=initialOf(u.name);
-      const ti=el('title',{},g); ti.textContent=u.name;
-    });
+/* Figuren der anderen: erscheinen am Standort der Person, laufen mit, verschwinden wenn sie weg ist */
+function syncOtherParties(others){
+  const want=new Map(others.filter(u=>u.node&&BY[u.node]).slice(0,8).map(u=>[u.client,u]));
+  for(let i=parties.length-1;i>=0;i--){
+    const P=parties[i]; if(P===meP||want.has(P.key)) continue;
+    P.tok++; P.chars.forEach(c=>{ cancelFx(c); c.g.remove(); }); parties.splice(i,1);
+  }
+  want.forEach((u,key)=>{
+    let P=parties.find(q=>q.key===key);
+    if(!P){ P=mkParty(key); setPartyLook(P,u.name,hueOf(u.name)); P.pos=u.node; placeParty(P,u.node); return; }
+    if(P.label!==u.name) setPartyLook(P,u.name,hueOf(u.name));
+    if(P.pos!==u.node) moveParty(P,u.node,true);
   });
 }
+/* meine eigenen Figuren bekommen im gemeinsamen Modus ebenfalls Ring und Schild („Du“) in meiner Farbe */
+function updateMeLook(){ if(!meP) return; if(ONLINE&&SYNC.code&&SYNC.name) setPartyLook(meP,'Du',hueOf(SYNC.name)); else setPartyLook(meP,null,0); }
 whoChip.addEventListener('click',e=>{ e.stopPropagation(); PRES.open=!PRES.open; renderPresence(); });
 whoPop.addEventListener('click',e=>{
   const b=e.target.closest('[data-node]'); if(!b) return; e.stopPropagation();
@@ -1384,7 +1395,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&PRES.open){ PRES.o
 
 /* Start */
 applyCam(); renderAll();
-chars.push(mkChar('t'),mkChar('s')); resetChars();
+meP=mkParty('me'); resetChars();
 cam={x:0,y:0,s:.4}; applyCam(); fit();
 if(ONLINE) startOnline(); else initDir();
 </script>
