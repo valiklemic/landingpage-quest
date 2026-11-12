@@ -1,6 +1,6 @@
 /* Service Worker – Landingpage Quest
    App-Shell wird offline vorgehalten. Supabase-Sync (andere Origin) läuft immer direkt übers Netz. */
-const CACHE = 'lpq-shell-v1';
+const CACHE = 'lpq-shell-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/icon.svg'];
 
 self.addEventListener('install', e => {
@@ -19,10 +19,10 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== self.location.origin) return; // Sync etc. nicht anfassen
 
-  // Seite: Netz zuerst (immer aktuelle Version), bei Offline aus dem Cache
+  // Seite: Netz zuerst und ohne HTTP-Zwischenspeicher (GitHub Pages erlaubt 10 Min. Caching), bei Offline aus dem Cache
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req).then(res => {
+      fetch(req, { cache: 'no-store' }).then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put('./index.html', copy));
         return res;
