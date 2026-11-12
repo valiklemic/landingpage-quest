@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#13102e">
-<meta name="app-build" content="2026-11-12.7">
+<meta name="app-build" content="2026-11-12.8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1040,7 +1040,6 @@ const SPRITE = {
     <path d="M-10,-49 A10 10 0 0 1 10,-49 Q5,-53.5 0,-53 Q-5,-53.5 -10,-49Z" fill="#2b1d1a"/>
     <circle cx="-3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/><circle cx="3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/>
     <path d="M-2.6,-43.4 q2.6,2 5.2,0" stroke="#a85a4a" fill="none" stroke-width="1.1" stroke-linecap="round"/>
-    <circle class="ear" cx="-10.3" cy="-47.5" r="2" fill="#5ef0ff"/><circle class="ear" cx="10.3" cy="-47.5" r="2" fill="#5ef0ff"/>
   </g>`,
   /* größerer, stämmiger Mann: schwarze Anzughose, weißes Hemd, blonde Haare */
   h:`<g class="bob">
@@ -1063,7 +1062,6 @@ const SPRITE = {
     <path d="M-7.6,-62.6 h4.8 M2.8,-62.6 h4.8" stroke="#a98332" stroke-width="1.5" stroke-linecap="round"/>
     <circle cx="-4.4" cy="-58.5" r="1.5" fill="#1a1a2a"/><circle cx="4.4" cy="-58.5" r="1.5" fill="#1a1a2a"/>
     <path d="M-3,-53.4 q3,2.3 6,0" stroke="#a0584a" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle class="ear" cx="-11.8" cy="-58.5" r="2.2" fill="#5ef0ff"/><circle class="ear" cx="11.8" cy="-58.5" r="2.2" fill="#5ef0ff"/>
   </g>`,
   /* brünette Frau im eleganten Outfit: smaragdgrünes Kleid mit goldenem Gürtel, Kette, Absatzschuhe */
   w:`<g class="bob">
@@ -1085,7 +1083,6 @@ const SPRITE = {
     <circle cx="-3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/><circle cx="3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/>
     <path d="M-6.4,-50.6 l3.4,-.6 M3,-51.2 l3.4,.6" stroke="#2a1a1a" stroke-width="1" stroke-linecap="round"/>
     <path d="M-2.7,-43.6 q2.7,2.3 5.4,0" stroke="#d8365f" fill="none" stroke-width="1.7" stroke-linecap="round"/>
-    <circle class="ear" cx="-10.4" cy="-45.4" r="1.9" fill="#5ef0ff"/><circle class="ear" cx="10.4" cy="-45.4" r="1.9" fill="#5ef0ff"/>
   </g>`
 };
 /* Jede Person hat ihr eigenes Figurenpaar: meine (meP) und je eine Gruppe für jede andere online befindliche Person.
@@ -1101,14 +1098,13 @@ function mkChar(fig){
   const tag=el('text',{class:'ptag',y:F.top-2,display:'none'},g);
   return {k,g,fxw,flip,ring,tag,x:0,y:0,dir:1,slot:0};
 }
-/* Aussehen: Farbring unter den Füßen, Namensschild über dem großen Charakter, Ohrstück in der Personenfarbe */
+/* Aussehen: Farbring unter den Füßen und Namensschild über der Figur, beides in der Personenfarbe */
 function setPartyLook(P,label,hue){
   P.label=label; P.hue=hue;
   P.chars.forEach(c=>{
     const on=label!=null, col=`hsl(${hue||0} 85% 68%)`;
     c.ring.setAttribute('display',on?'':'none'); c.ring.setAttribute('stroke',col); c.ring.setAttribute('stroke-width','2'); c.ring.setAttribute('fill',`hsl(${hue||0} 85% 68% / .22)`);
     if(c.tag){ c.tag.setAttribute('display',on?'':'none'); c.tag.setAttribute('fill',col); c.tag.textContent=label||''; }
-    c.flip.querySelectorAll('.ear').forEach(e=>e.setAttribute('fill',on?col:'#5ef0ff'));
   });
 }
 function mkParty(key,fig){ fig=FIGS[fig]?fig:'a'; const P={key,fig,label:null,hue:0,pos:null,tok:0,slot:0,chars:[mkChar(fig)]}; parties.push(P); return P; }
