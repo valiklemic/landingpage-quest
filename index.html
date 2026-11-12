@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#13102e">
-<meta name="app-build" content="2026-11-12.5">
+<meta name="app-build" content="2026-11-12.8">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -75,9 +75,9 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
 .field{margin:12px 0}
 .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
 .field label em{color:var(--warn);font-style:normal}
-#gate{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#2a1a6a 0,var(--bg) 70%)}
+#gate{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;overscroll-behavior:contain;padding:16px 0;background:radial-gradient(circle at 50% 40%,#2a1a6a 0,var(--bg) 70%)}
 #gate.show{display:flex}
-#gate form{width:min(400px,92vw);background:var(--panel);border:1px solid var(--stone-line);border-radius:18px;padding:26px;box-shadow:0 0 50px #5ef0ff22,0 0 90px #ff5fa222}
+#gate form{margin:auto;width:min(400px,92vw);background:var(--panel);border:1px solid var(--stone-line);border-radius:18px;padding:26px;box-shadow:0 0 50px #5ef0ff22,0 0 90px #ff5fa222}
 #gate h2{margin:0;font-size:20px;letter-spacing:.04em}
 #gate h2 span{background:linear-gradient(90deg,var(--pink),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
 .gerr{color:var(--bad);min-height:20px;margin:6px 0 10px;font-size:13px}
@@ -173,6 +173,12 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
 #whoChip .avs .av:first-child{margin-left:0}
 .av{--h:200;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#07102a;background:hsl(var(--h) 80% 70%);flex:none}
 #whoPop{position:absolute;left:12px;top:54px;z-index:6;min-width:230px;max-width:min(340px,calc(100% - 24px));max-height:50%;overflow:auto;background:var(--panel);border:1px solid var(--stone-line);border-radius:14px;padding:6px;box-shadow:0 10px 30px #000a}
+.figpick{display:flex;gap:8px}
+.fig{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 6px;background:#0e0b26;border:1px solid var(--stone-line);border-radius:12px;color:var(--text);font-size:12px;cursor:pointer}
+.fig svg{width:44px;height:60px;overflow:visible}
+.fig.on{border-color:var(--pink);background:#2a1246;box-shadow:0 0 10px #ff5fa233}
+.figrow{padding:8px 6px 4px;border-top:1px solid var(--line);margin-top:4px}
+.figrow .lbl{font-size:12px;color:var(--muted);margin:0 2px 6px}
 .ptag{font-size:12px;font-weight:700;text-anchor:middle;paint-order:stroke;stroke:#0c0a1f;stroke-width:3.5px;pointer-events:none}
 .who-row{display:flex;gap:10px;align-items:center;padding:8px;border-radius:9px;color:var(--text);width:100%;text-align:left;background:none;border:0}
 .who-row.go{cursor:pointer}
@@ -218,6 +224,11 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
   #toast{bottom:max(22px,calc(env(safe-area-inset-bottom) + 10px))}
 }
 @media(max-width:400px){ #btnNext .lg{display:none} #btnNext .sm{display:inline} }
+@media(max-height:520px){
+  .fig svg{width:30px;height:42px}
+  #gate form{padding:16px 20px}
+  #gate .field{margin:8px 0}
+}
 @media(max-width:860px) and (max-height:520px){
   /* Handy quer: Panel als Seitenleiste, damit die Karte sichtbar bleibt */
   #panel{left:auto;width:min(380px,55vw);top:var(--topH,57px);bottom:0;max-height:none;border-radius:0;border-left:1px solid var(--stone-line);box-shadow:-10px 0 30px #000a;transform:translateX(105%)}
@@ -268,6 +279,7 @@ button,.btn,.opt,.need,.brrow{touch-action:manipulation;-webkit-tap-highlight-co
   <p class="muted" style="margin:4px 0 14px">Gemeinsamer Arbeitsstand. Gib deinen Namen und den Zugangscode ein, den du bekommen hast.</p>
   <div class="field"><label>Dein Name</label><input type="text" id="gName" maxlength="30" autocomplete="name"></div>
   <div class="field"><label>Zugangscode</label><input type="password" id="gCode" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"></div>
+  <div class="field"><label>Deine Figur</label><div class="figpick" id="gFig"></div></div>
   <div id="gErr" class="gerr"></div>
   <button class="btn primary" id="gBtn" type="submit" style="width:100%;padding:10px">Anmelden</button>
 </form></div>
@@ -1025,20 +1037,19 @@ const SPRITE = {
     <polygon points="0,-37 -1.7,-33 0,-27 1.7,-33" fill="#ff5fa2"/>
     <g class="arm armR"><rect x="9" y="-37" width="6" height="17" rx="3" fill="url(#pin)"/><circle cx="12" cy="-19.5" r="2.9" fill="${SKIN1}"/></g>
     <circle cx="0" cy="-48" r="10" fill="${SKIN1}"/>
-    <path d="M-10,-49 A10 10 0 0 1 10,-49 Q4,-55 -2,-54 Q-8,-53 -10,-49Z" fill="#2b1d1a"/>
-    <circle cx="4.2" cy="-47.5" r="1.4" fill="#1a1a2a"/>
-    <path d="M2.2,-43.5 q2.2,1.7 4.4,0" stroke="#a85a4a" fill="none" stroke-width="1.1" stroke-linecap="round"/>
-    <circle class="ear" cx="-7.6" cy="-47.5" r="1.9" fill="#5ef0ff"/>
+    <path d="M-10,-49 A10 10 0 0 1 10,-49 Q5,-53.5 0,-53 Q-5,-53.5 -10,-49Z" fill="#2b1d1a"/>
+    <circle cx="-3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/><circle cx="3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/>
+    <path d="M-2.6,-43.4 q2.6,2 5.2,0" stroke="#a85a4a" fill="none" stroke-width="1.1" stroke-linecap="round"/>
   </g>`,
-  /* größerer, stämmiger Anzugträger: schwarze Anzughose, weißes Hemd */
-  t:`<g class="bob">
+  /* größerer, stämmiger Mann: schwarze Anzughose, weißes Hemd, blonde Haare */
+  h:`<g class="bob">
     <ellipse cx="0" cy="1" rx="20" ry="3.5" fill="#000" opacity=".4"/>
     <g class="leg legL"><rect x="-10" y="-23" width="9.5" height="23" rx="2.5" fill="#16161f"/><rect x="-10" y="-3.6" width="13" height="3.8" rx="1.9" fill="#05060b"/></g>
     <g class="leg legR"><rect x="0.5" y="-23" width="9.5" height="23" rx="2.5" fill="#16161f"/><rect x="0.5" y="-3.6" width="13" height="3.8" rx="1.9" fill="#05060b"/></g>
     <g class="arm armL"><rect x="-24.5" y="-47" width="9" height="18" rx="4.5" fill="#f6f7ff"/><rect x="-23.5" y="-31" width="7" height="10" rx="3.5" fill="${SKIN2}"/><circle cx="-20" cy="-20" r="3.4" fill="${SKIN2}"/></g>
     <rect x="-17" y="-49" width="34" height="32" rx="12" fill="#f6f7ff"/>
-    <ellipse cx="4" cy="-31" rx="15" ry="12" fill="#f6f7ff"/>
-    <path d="M3,-46 V-21" stroke="#d9dcef" stroke-width="1"/>
+    <ellipse cx="0" cy="-31" rx="15" ry="12" fill="#f6f7ff"/>
+    <path d="M0,-46 V-21" stroke="#d9dcef" stroke-width="1"/>
     <rect x="-17" y="-22" width="34" height="7.5" rx="2.5" fill="#16161f"/>
     <rect x="-17" y="-23.5" width="34" height="2.6" fill="#07070d"/>
     <rect x="-1.5" y="-24" width="5.5" height="3.6" rx="1" fill="#ff5fa2"/>
@@ -1046,46 +1057,78 @@ const SPRITE = {
     <polygon points="0,-46 -2.8,-41.5 0,-30 2.8,-41.5" fill="#0b0b12"/>
     <g class="arm armR"><rect x="15.5" y="-47" width="9" height="18" rx="4.5" fill="#f6f7ff"/><rect x="16.5" y="-31" width="7" height="10" rx="3.5" fill="${SKIN2}"/><circle cx="20" cy="-20" r="3.4" fill="${SKIN2}"/></g>
     <circle cx="0" cy="-58" r="11.5" fill="#e6b48e"/>
-    <path d="M-11.5,-60 A11.5 11.5 0 0 1 11.5,-60 Q5,-67.5 -3,-66.5 Q-9,-65.5 -11.5,-60Z" fill="#14100f"/>
-    <path d="M2.5,-62.8 h4.6" stroke="#14100f" stroke-width="1.5" stroke-linecap="round"/>
-    <circle cx="4.8" cy="-58.5" r="1.5" fill="#1a1a2a"/>
-    <path d="M2.2,-53.5 q2.6,1.8 5.2,0" stroke="#a0584a" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle class="ear" cx="-8.6" cy="-58.5" r="2" fill="#5ef0ff"/>
+    <path d="M-11.5,-60 A11.5 11.5 0 0 1 11.5,-60 Q6,-64.5 0,-64 Q-6,-64.5 -11.5,-60Z" fill="#e8c862"/>
+    <path d="M-6,-68.2 Q0,-71 6,-68.2" stroke="#f6e08e" fill="none" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M-7.6,-62.6 h4.8 M2.8,-62.6 h4.8" stroke="#a98332" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="-4.4" cy="-58.5" r="1.5" fill="#1a1a2a"/><circle cx="4.4" cy="-58.5" r="1.5" fill="#1a1a2a"/>
+    <path d="M-3,-53.4 q3,2.3 6,0" stroke="#a0584a" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+  </g>`,
+  /* brünette Frau im eleganten Outfit: smaragdgrünes Kleid mit goldenem Gürtel, Kette, Absatzschuhe */
+  w:`<g class="bob">
+    <ellipse cx="0" cy="1" rx="14" ry="3" fill="#000" opacity=".4"/>
+    <path d="M-10.8,-50 Q-15,-38 -10.5,-26 Q0,-22.5 10.5,-26 Q15,-38 10.8,-50Z" fill="#4a2a1a"/>
+    <g class="leg legL"><rect x="-5.6" y="-18" width="5" height="16" rx="2.2" fill="#ecc4a4"/><path d="M-6.8,-3.6 h7.4 q.9,0 .9,.9 v2.7 h-8.3Z" fill="#0c2a21"/><rect x="-6.8" y="-1" width="1.8" height="1.6" fill="#0c2a21"/></g>
+    <g class="leg legR"><rect x="0.6" y="-18" width="5" height="16" rx="2.2" fill="#ecc4a4"/><path d="M-0.6,-3.6 h7.4 q.9,0 .9,.9 v2.7 h-8.3Z" fill="#0c2a21"/><rect x="5" y="-1" width="1.8" height="1.6" fill="#0c2a21"/></g>
+    <g class="arm armL"><rect x="-14" y="-37.5" width="5.2" height="15" rx="2.6" fill="#0b6e50"/><circle cx="-11.4" cy="-21.5" r="2.7" fill="#f1c9a5"/></g>
+    <path d="M-8.6,-40 Q-9.8,-32 -7.6,-27 L7.6,-27 Q9.8,-32 8.6,-40Z" fill="#0b6e50"/>
+    <path d="M-7.6,-27.5 L7.6,-27.5 Q13.8,-20 12.8,-13.5 Q0,-10.8 -12.8,-13.5 Q-13.8,-20 -7.6,-27.5Z" fill="#10916a"/>
+    <path d="M-12.4,-14.4 Q0,-11.7 12.4,-14.4" stroke="#6ff5c0" stroke-opacity=".55" fill="none" stroke-width="1.1"/>
+    <path d="M-8.2,-28.8 h16.4" stroke="#f3cf7a" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M-4.4,-40 L0,-32.5 L4.4,-40Z" fill="#f1c9a5"/>
+    <path d="M-3.6,-37.6 Q0,-33.4 3.6,-37.6" stroke="#f3cf7a" fill="none" stroke-width="1" stroke-linecap="round"/>
+    <g class="arm armR"><rect x="8.8" y="-37.5" width="5.2" height="15" rx="2.6" fill="#0b6e50"/><circle cx="11.4" cy="-21.5" r="2.7" fill="#f1c9a5"/></g>
+    <circle cx="0" cy="-48" r="10" fill="#f1c9a5"/>
+    <path d="M-10.6,-48.5 A10.6 10.6 0 0 1 10.6,-48.5 Q6,-53 0,-55.6 Q-6,-53 -10.6,-48.5Z" fill="#4a2a1a"/>
+    <path d="M0,-55.4 Q0.6,-57.4 0,-59.2" stroke="#6a3f27" fill="none" stroke-width="1.1" stroke-linecap="round"/>
+    <circle cx="-3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/><circle cx="3.6" cy="-47.5" r="1.4" fill="#1a1a2a"/>
+    <path d="M-6.4,-50.6 l3.4,-.6 M3,-51.2 l3.4,.6" stroke="#2a1a1a" stroke-width="1" stroke-linecap="round"/>
+    <path d="M-2.7,-43.6 q2.7,2.3 5.4,0" stroke="#d8365f" fill="none" stroke-width="1.7" stroke-linecap="round"/>
   </g>`
 };
 /* Jede Person hat ihr eigenes Figurenpaar: meine (meP) und je eine Gruppe für jede andere online befindliche Person.
    Meine Figuren laufen nur durch MEINE Aktionen; die der anderen folgen deren Standort aus der Live-Anwesenheit. */
+const FIGS={a:{n:'Anzug',k:'s',top:-66,rx:16},h:{n:'Hemd',k:'h',top:-79,rx:23},w:{n:'Elegant',k:'w',top:-68,rx:16}};
+let MYFIG='a'; try{ const f=localStorage.getItem('lpq-fig'); if(FIGS[f]) MYFIG=f; }catch(e){}
 const parties=[]; let meP=null;
-function mkChar(k){
+function mkChar(fig){
+  const F=FIGS[fig]||FIGS.a, k=F.k;
   const g=el('g',{class:'ch'},gChars), fxw=el('g',{},g), flip=el('g',{},fxw);
   flip.innerHTML=SPRITE[k];
-  const ring=el('ellipse',{class:'pring',cx:0,cy:2,rx:k==='t'?25:18,ry:6,display:'none'},g); g.insertBefore(ring,fxw);
-  const tag=k==='t'?el('text',{class:'ptag',y:-78,display:'none'},g):null;
+  const ring=el('ellipse',{class:'pring',cx:0,cy:2,rx:F.rx+3,ry:6,display:'none'},g); g.insertBefore(ring,fxw);
+  const tag=el('text',{class:'ptag',y:F.top-2,display:'none'},g);
   return {k,g,fxw,flip,ring,tag,x:0,y:0,dir:1,slot:0};
 }
-/* Aussehen: Farbring unter den Füßen, Namensschild über dem großen Charakter, Ohrstück in der Personenfarbe */
+/* Aussehen: Farbring unter den Füßen und Namensschild über der Figur, beides in der Personenfarbe */
 function setPartyLook(P,label,hue){
   P.label=label; P.hue=hue;
   P.chars.forEach(c=>{
     const on=label!=null, col=`hsl(${hue||0} 85% 68%)`;
     c.ring.setAttribute('display',on?'':'none'); c.ring.setAttribute('stroke',col); c.ring.setAttribute('stroke-width','2'); c.ring.setAttribute('fill',`hsl(${hue||0} 85% 68% / .22)`);
     if(c.tag){ c.tag.setAttribute('display',on?'':'none'); c.tag.setAttribute('fill',col); c.tag.textContent=label||''; }
-    c.flip.querySelectorAll('.ear').forEach(e=>e.setAttribute('fill',on?col:'#5ef0ff'));
   });
 }
-function mkParty(key){ const P={key,label:null,hue:0,pos:null,tok:0,slot:0,chars:[mkChar('t'),mkChar('s')]}; parties.push(P); return P; }
+function mkParty(key,fig){ fig=FIGS[fig]?fig:'a'; const P={key,fig,label:null,hue:0,pos:null,tok:0,slot:0,chars:[mkChar(fig)]}; parties.push(P); return P; }
+/* Figur wechseln (bei mir selbst oder wenn eine andere Person ihre Figur ändert) */
+function setPartyFig(P,fig){
+  fig=FIGS[fig]?fig:'a'; if(P.fig===fig) return;
+  const label=P.label, hue=P.hue;
+  P.chars.forEach(c=>{ cancelFx(c); c.g.remove(); }); P.tok++;
+  P.fig=fig; P.chars=[mkChar(fig)];
+  const pos=partyPos(P); if(pos&&BY[pos]) placeParty(P,pos);
+  setPartyLook(P,label,hue);
+}
 const partyPos=P=>P===meP?S.pos:P.pos;
 const setPartyPos=(P,id)=>{ if(P===meP) S.pos=id; else P.pos=id; };
 /* Mehrere Personen am selben Schritt stehen nebeneinander: meine innen, die anderen weiter außen */
 function pickSlot(P,id){
-  if(P===meP) return 0;
   const used=new Set(); parties.forEach(Q=>{ if(Q!==P && partyPos(Q)===id) used.add(Q.slot); });
-  let sl=1; while(used.has(sl)&&sl<4) sl++; return sl;
+  let sl=0; while(used.has(sl)&&sl<7) sl++; return sl;
 }
-const nodePos=(id,c)=>{ const n=BY[id], sl=c.slot||0; return {x:n.x+(c.k==='s'?-(n.r+18+36*sl):(n.r+22+36*sl)), y:n.y+n.r*.45}; };
+/* Platz 0 rechts vom Schritt, 1 links, 2 weiter rechts, 3 weiter links … */
+const nodePos=(id,c)=>{ const n=BY[id], sl=c.slot||0; return {x:n.x+(sl%2?-1:1)*(n.r+24+40*Math.floor(sl/2)), y:n.y+n.r*.45}; };
 function setC(c,x,y){ c.x=x; c.y=y; c.g.setAttribute('transform',`translate(${x},${y})`); }
 function faceC(c,dx){ if(Math.abs(dx)<.5) return; c.dir=dx<0?-1:1; c.flip.setAttribute('transform',`scale(${c.dir},1)`); }
-function idleFace(c){ faceC(c,c.k==='s'?1:-1); }
+function idleFace(c){ faceC(c,(c.slot||0)%2?1:-1); }
 function cancelFx(c){ c.fxw.getAnimations().forEach(a=>a.cancel()); c.g.classList.remove('walk'); }
 function placeParty(P,id){ P.slot=pickSlot(P,id); P.chars.forEach(c=>{ c.slot=P.slot; const p=nodePos(id,c); setC(c,p.x,p.y); idleFace(c); }); }
 function resetChars(){   /* meine Figuren an ihren gespeicherten Standort */
@@ -1329,7 +1372,7 @@ const whoChip=document.getElementById('whoChip'), whoPop=document.getElementById
 const hueOf=name=>{ let h=0; for(const c of String(name)) h=(h*31+c.codePointAt(0))%360; return h; };
 const initialOf=name=>(String(name).trim().charAt(0)||'?').toUpperCase();
 function avHTML(name){ return `<span class="av" style="--h:${hueOf(name)}">${esc(initialOf(name))}</span>`; }
-function presBody(leave){ return {p_code:SYNC.code,p_client:PRES.id,p_name:SYNC.name||'Gast',p_node:S.pos||null,p_leave:!!leave}; }
+function presBody(leave){ return {p_code:SYNC.code,p_client:PRES.id,p_name:SYNC.name||'Gast',p_node:S.pos||null,p_leave:!!leave,p_fig:MYFIG}; }
 async function presTick(){
   if(!ONLINE||!SYNC.code||document.visibilityState==='hidden') return;
   try{
@@ -1371,7 +1414,7 @@ function renderPresence(){
     const me={name:SYNC.name||'Gast',node:S.pos};
     whoPop.innerHTML=[`<div class="who-row" role="listitem">${avHTML(me.name)}<div><div class="nm">${esc(me.name)} (du)</div><div class="st">${whereHTML(me)}</div></div></div>`]
       .concat(others.map(u=>`<button class="who-row${u.node&&BY[u.node]?' go':''}" role="listitem" data-node="${esc(u.node||'')}">${avHTML(u.name)}<div><div class="nm">${esc(u.name)}</div><div class="st">${whereHTML(u)}</div></div></button>`)).join('');
-    whoPop.insertAdjacentHTML('beforeend',`<div class="ver">App-Version ${esc(window.APP_BUILD||'')}</div>`);
+    whoPop.insertAdjacentHTML('beforeend',`<div class="figrow"><div class="lbl">Deine Figur</div><div class="figpick">${figPickHTML(MYFIG)}</div></div><div class="ver">App-Version ${esc(window.APP_BUILD||'')}</div>`);
     whoPop.hidden=false;
   } else whoPop.hidden=true;
   syncOtherParties(others);
@@ -1385,7 +1428,8 @@ function syncOtherParties(others){
   }
   want.forEach((u,key)=>{
     let P=parties.find(q=>q.key===key);
-    if(!P){ P=mkParty(key); setPartyLook(P,u.name,hueOf(u.name)); P.pos=u.node; placeParty(P,u.node); return; }
+    if(!P){ P=mkParty(key,u.fig); setPartyLook(P,u.name,hueOf(u.name)); P.pos=u.node; placeParty(P,u.node); return; }
+    if(P.fig!==(FIGS[u.fig]?u.fig:'a')) setPartyFig(P,u.fig);
     if(P.label!==u.name) setPartyLook(P,u.name,hueOf(u.name));
     if(P.pos!==u.node) moveParty(P,u.node,true);
   });
@@ -1394,15 +1438,32 @@ function syncOtherParties(others){
 function updateMeLook(){ if(!meP) return; if(ONLINE&&SYNC.code&&SYNC.name) setPartyLook(meP,'Du',hueOf(SYNC.name)); else setPartyLook(meP,null,0); }
 whoChip.addEventListener('click',e=>{ e.stopPropagation(); PRES.open=!PRES.open; renderPresence(); });
 whoPop.addEventListener('click',e=>{
+  const fb=e.target.closest('[data-fig]'); if(fb){ e.stopPropagation(); setMyFig(fb.dataset.fig); return; }
   const b=e.target.closest('[data-node]'); if(!b) return; e.stopPropagation();
   const id=b.dataset.node; if(id&&BY[id]){ PRES.open=false; renderPresence(); selectNode(id); }
 });
 document.addEventListener('click',e=>{ if(PRES.open&&!whoPop.contains(e.target)&&e.target!==whoChip){ PRES.open=false; renderPresence(); } });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&PRES.open){ PRES.open=false; renderPresence(); } });
 
+/* ============================================================
+   FIGURENWAHL – jede Person wählt eine von drei Figuren (wird den anderen live angezeigt)
+   ============================================================ */
+function figPickHTML(sel){
+  return Object.keys(FIGS).map(id=>`<button type="button" class="fig${sel===id?' on':''}" data-fig="${id}" aria-pressed="${sel===id}"><svg viewBox="-30 -84 60 90" aria-hidden="true">${SPRITE[FIGS[id].k]}</svg><span>${FIGS[id].n}</span></button>`).join('');
+}
+const gFig=document.getElementById('gFig');
+function renderGateFig(){ gFig.innerHTML=figPickHTML(MYFIG); }
+function setMyFig(id){
+  if(!FIGS[id]) return; MYFIG=id; try{ localStorage.setItem('lpq-fig',id); }catch(e){}
+  if(meP) setPartyFig(meP,id);
+  renderGateFig(); if(ONLINE&&SYNC.code){ presTick(); renderPresence(); }
+}
+gFig.addEventListener('click',e=>{ const b=e.target.closest('[data-fig]'); if(b) setMyFig(b.dataset.fig); });
+renderGateFig();
+
 /* Start */
 applyCam(); renderAll();
-meP=mkParty('me'); resetChars();
+meP=mkParty('me',MYFIG); resetChars();
 cam={x:0,y:0,s:.4}; applyCam(); fit();
 if(ONLINE) startOnline(); else initDir();
 </script>
