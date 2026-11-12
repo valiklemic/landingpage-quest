@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landingpage Quest (gemeinsam)</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0c0a1f; --bg2:#13102e; --panel:#15122f; --line:#2b2759;
+  --text:#ece9ff; --muted:#9b97c9; --stone:#1c1940; --stone-line:#3d3872;
+  --accent:#5ef0ff; --pink:#ff5fa2; --violet:#9b7bff; --warn:#ffc56b; --bad:#ff7a9a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+#top{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+#top h1{font-size:16px;margin:0;letter-spacing:.04em;white-space:nowrap}
+#top{background:linear-gradient(90deg,#16103a,#13102e 60%,#101a3a);box-shadow:0 1px 0 #ff5fa233, 0 4px 24px #5ef0ff12}
+#top h1 span{background:linear-gradient(90deg,var(--pink),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+#prog{flex:1;min-width:140px;display:flex;align-items:center;gap:10px}
+#bar{flex:1;height:10px;background:var(--stone);border-radius:99px;overflow:hidden;border:1px solid var(--stone-line)}
+#bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5fa2,var(--accent));transition:width .6s}
+#progTxt{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.btn{background:var(--stone);border:1px solid var(--stone-line);padding:6px 11px;border-radius:8px;font-size:13px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:linear-gradient(90deg,#5ef0ff,#9b7bff);color:#07102a;border-color:transparent;font-weight:700;box-shadow:0 0 14px #5ef0ff44}
+.btn.primary:disabled{background:var(--stone);color:var(--muted);border-color:var(--stone-line);cursor:not-allowed}
+.btn.small{padding:3px 8px;font-size:12px}
+#save{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--stone-line);background:var(--stone);color:var(--muted)}
+#save.ok{color:var(--accent);border-color:#2f7a96}
+#save.warn{color:var(--warn);border-color:#7a5a1d}
+#save.bad{color:var(--bad);border-color:#7a2b2b}
+#btnPanel{display:none}
+#main{flex:1;display:flex;min-height:0;position:relative}
+#mapWrap{flex:1;position:relative;min-width:0;background:
+  radial-gradient(circle at 50% 50%, #ff5fa224 0, transparent 38%),
+  radial-gradient(circle at 50% 50%, #2a1a6a 0, transparent 78%),
+  linear-gradient(#5ef0ff0d 1px,transparent 1px) 0 0/44px 44px,
+  linear-gradient(90deg,#5ef0ff0d 1px,transparent 1px) 0 0/44px 44px,
+  var(--bg)}
+#viewport{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab;user-select:none}
+svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;transform-origin:0 0;pointer-events:auto}
+#viewport.drag{cursor:grabbing}
+#zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px}
+#zoom .btn{width:36px;height:36px;padding:0;font-size:18px}
+#legend{position:absolute;left:12px;bottom:12px;display:flex;gap:12px;font-size:12px;color:var(--muted);background:#0c0a1fcc;padding:6px 10px;border-radius:8px;border:1px solid var(--line);flex-wrap:wrap}
+#legend b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#panel{width:400px;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:16px;flex:none}
+#panel h2{margin:0 0 4px;font-size:18px;line-height:1.25}
+#panel h3{margin:18px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--stone-line);margin-right:6px;color:var(--muted)}
+.chip.open{color:var(--accent);border-color:#2f7a96}
+.chip.done{color:#07102a;background:var(--accent);border-color:var(--accent);font-weight:700}
+.chip.locked{color:var(--warn);border-color:#7a5a1d}
+.info{margin:6px 0 0;padding-left:18px;color:#cfcaf5}
+.info li{margin:3px 0}
+.field{margin:12px 0}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.field label em{color:var(--warn);font-style:normal}
+#gate{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#2a1a6a 0,var(--bg) 70%)}
+#gate.show{display:flex}
+#gate form{width:min(400px,92vw);background:var(--panel);border:1px solid var(--stone-line);border-radius:18px;padding:26px;box-shadow:0 0 50px #5ef0ff22,0 0 90px #ff5fa222}
+#gate h2{margin:0;font-size:20px;letter-spacing:.04em}
+#gate h2 span{background:linear-gradient(90deg,var(--pink),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.gerr{color:var(--bad);min-height:20px;margin:6px 0 10px;font-size:13px}
+.byline{font-size:12px;margin-top:6px}
+.banner.onl{background:#0f1f3a;border-color:#2f7a96;color:#bfeaf5}
+.field input[type=password],.field input[type=text],.field input[type=date],.field input[type=number],.field select,.field textarea{
+  width:100%;background:#0e0b26;border:1px solid var(--stone-line);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit}
+.field textarea{min-height:76px;resize:vertical}
+.multi{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--stone-line);border-radius:10px;background:#0e0b26;cursor:pointer;color:var(--text);font-size:13px;transition:all .15s}
+.opt:hover{border-color:var(--accent)}
+.opt input{accent-color:#ff5fa2;width:16px;height:16px;flex:none}
+.opt.on{border-color:var(--pink);background:#2a1246;box-shadow:0 0 10px #ff5fa233}
+.hintm{font-size:11px;color:var(--muted);margin-top:4px}
+.addopt{display:flex;gap:6px;margin-top:8px}
+.addopt input{flex:1;min-width:0}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid #2f7a96;border-color:var(--accent)}
+.chk{display:flex;gap:8px;align-items:flex-start;color:var(--text);font-size:13px;cursor:pointer}
+.chk input{margin-top:3px;accent-color:#ff5fa2}
+.calc{background:#0f1535;border:1px dashed #2f7a96;border-radius:8px;padding:8px 10px;color:var(--accent);margin:10px 0}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.need{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin:4px 0;cursor:pointer;background:var(--bg2)}
+.need:hover{border-color:var(--accent)}
+.need .dot{width:10px;height:10px;border-radius:50%;background:var(--stone-line);flex:none}
+.need.done .dot{background:var(--accent)}
+.brrow{display:flex;align-items:center;gap:8px;margin:7px 0;cursor:pointer}
+.brrow .nm{width:150px;font-size:13px}
+.brrow .b{flex:1;height:8px;background:var(--stone);border-radius:99px;overflow:hidden}
+.brrow .b i{display:block;height:100%}
+.brrow .ct{width:34px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.banner{background:#241d0c;border:1px solid #7a5a1d;border-radius:10px;padding:10px 12px;margin:0 0 14px;color:#f1d9a5}
+.banner button{margin-top:8px}
+.x{float:right}
+.muted{color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,30px);background:#151845;border:1px solid #2f7a96;color:var(--text);padding:10px 16px;border-radius:12px;opacity:0;transition:all .35s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#win{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:30}
+#win.show{display:flex}
+#win div{background:var(--panel);border:2px solid var(--accent);border-radius:18px;padding:28px 34px;text-align:center;max-width:420px}
+#win h2{margin:0 0 8px;font-size:26px}
+
+/* Karte */
+.edge{fill:none;stroke:#38326f;stroke-width:3;stroke-linecap:round}
+.edge.cross{stroke-dasharray:3 9;stroke-width:2}
+.edge.lit{stroke:var(--c);opacity:.9}
+.edge.live{stroke:var(--c);opacity:.9;stroke-dasharray:6 8;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.node{cursor:pointer}
+.node .body{fill:var(--stone);stroke:var(--stone-line);stroke-width:2.5}
+.node.open .body{fill:color-mix(in srgb,var(--c) 18%,#0c0a1f);stroke:var(--c);stroke-width:3.5}
+.node.done .body{fill:var(--c);stroke:#fff5;stroke-width:2}
+.node .glow{fill:none;stroke:var(--c);stroke-width:9;opacity:0;pointer-events:none}
+.node.open .glow{opacity:.2}
+.node.done .glow{opacity:.26}
+.node.sel .glow{opacity:.5}
+.edge.lit,.edge.live{stroke-width:4}
+#viewport.drag .halo,#viewport.drag .edge.live{animation-play-state:paused}
+.node.sel .body{stroke:#fff;stroke-width:4}
+.node .ic{font-size:23px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node.locked .ic{opacity:.5;pointer-events:none}
+.node .ic{pointer-events:none}
+.node .halo{fill:none;stroke:var(--c);stroke-width:3;opacity:0;transform-box:fill-box;transform-origin:center}
+.node.open .halo{animation:pulse 1.8s ease-out infinite}
+@keyframes pulse{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.55)}}
+.node .lbl{font-size:12px;fill:var(--text);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#0c0a1f;stroke-width:3.5px}
+.node.locked .lbl{fill:#7b77ae}
+.node .tag{font-size:9px;fill:var(--muted);text-anchor:middle;pointer-events:none;letter-spacing:.06em}
+.node .badge{font-size:15px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node .tick{fill:#07102a;stroke:var(--accent);stroke-width:0}
+.center .body{stroke-width:4}
+.ring{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;transform:rotate(-90deg);transition:stroke-dasharray .8s}
+.ringbg{fill:none;stroke:var(--stone);stroke-width:6}
+/* Figuren */
+.ch{pointer-events:none}
+.ch .bob{animation:breathe 2.6s ease-in-out infinite}
+.ch.walk .bob{animation:bobwalk .3s ease-in-out infinite}
+.ch .leg,.ch .arm{transform-box:fill-box;transform-origin:50% 0%}
+.ch.walk .legL{animation:swing .5s ease-in-out infinite alternate}
+.ch.walk .legR{animation:swing .5s ease-in-out infinite alternate-reverse}
+.ch.walk .armL{animation:swing .5s ease-in-out infinite alternate-reverse}
+.ch.walk .armR{animation:swing .5s ease-in-out infinite alternate}
+@keyframes swing{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+@keyframes bobwalk{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
+.brlabel{font-size:13px;font-weight:700;letter-spacing:.12em;text-anchor:middle;fill:var(--c);opacity:.75;pointer-events:none;text-transform:uppercase}
+
+@media(max-width:860px){
+  #btnPanel{display:inline-block}
+  #panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:66vh;transform:translateY(105%);transition:transform .3s;z-index:10;border-top:1px solid var(--stone-line);border-left:0;box-shadow:0 -10px 30px #000a}
+  body.panel-open #panel{transform:none}
+  #legend{display:none}
+}
+</style>
+</head>
+<body>
+<header id="top">
+  <h1>LANDINGPAGE <span>QUEST</span></h1>
+  <div id="prog"><div id="bar"><i></i></div><span id="progTxt"></span></div>
+  <button class="btn primary" id="btnNext" title="Zum nächsten freien Schritt springen">▶ Nächster Schritt</button>
+  <button class="btn" id="btnPanel">☰</button>
+  <button id="save" class="" title=""></button>
+  <button class="btn small" id="btnMd" title="Ergebnisse als Markdown herunterladen">⬇ MD</button>
+  <button class="btn small" id="btnJson" title="Fortschritt als JSON sichern">⬇ JSON</button>
+  <button class="btn small" id="btnImport" title="JSON-Fortschritt laden">⬆ Laden</button>
+  <button class="btn small" id="btnReset" title="Alles zurücksetzen">↺</button>
+  <input type="file" id="file" accept=".json,application/json" hidden>
+</header>
+<div id="main">
+  <div id="mapWrap">
+    <div id="viewport"><svg id="map" xmlns="http://www.w3.org/2000/svg" viewBox="-1000 -1000 2000 2000" width="2000" height="2000">
+      <defs>
+        <pattern id="pin" width="4" height="8" patternUnits="userSpaceOnUse"><rect width="4" height="8" fill="#1d2b57"/><rect x="1.6" width=".7" height="8" fill="#6d86c9"/></pattern>
+        <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ef0ff" stop-opacity="0"/><stop offset=".6" stop-color="#5ef0ff" stop-opacity=".55"/><stop offset="1" stop-color="#ff5fa2" stop-opacity=".9"/></linearGradient>
+      </defs>
+      <g id="world"><g id="gLabels"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gChars"></g><g id="gFx"></g></g></svg></div>
+    <div id="legend"><span><b style="background:#3d3872"></b>gesperrt</span><span><b style="background:#5ef0ff"></b>jetzt dran</span><span><b style="background:#ff5fa2"></b>geschafft</span><span>Ziel = Mitte · Start = außen</span></div>
+    <div id="zoom"><button class="btn" id="zIn">+</button><button class="btn" id="zOut">−</button><button class="btn" id="zFit" title="Alles anzeigen">⤢</button></div>
+  </div>
+  <aside id="panel"></aside>
+</div>
+<div id="gate"><form id="gateForm" autocomplete="off">
+  <h2>LANDINGPAGE <span>QUEST</span></h2>
+  <p class="muted" style="margin:4px 0 14px">Gemeinsamer Arbeitsstand. Gib deinen Namen und den Zugangscode ein, den du bekommen hast.</p>
+  <div class="field"><label>Dein Name</label><input type="text" id="gName" maxlength="30" autocomplete="name"></div>
+  <div class="field"><label>Zugangscode</label><input type="password" id="gCode" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"></div>
+  <div id="gErr" class="gerr"></div>
+  <button class="btn primary" id="gBtn" type="submit" style="width:100%;padding:10px">Anmelden</button>
+</form></div>
+<div id="toast"></div>
+<div id="win"><div><h2>🎉 Geschafft!</h2><p>Alle Schritte sind erledigt – die Landingpage-Kampagne ist startklar.</p><button class="btn primary" id="winClose">Weiter</button></div></div>
+
+<script>window.QUEST_CONFIG={"url":"https://wdyruhpekbxpmcqvalut.supabase.co","key":"sb_publishable_JgXrwdQqDqa6U1abWwAqaQ_I14KCdOF"};</script>
+<script>
+/* ============================================================
+   INHALT: Zweige, Schritte, Felder
+   ============================================================ */
+const BR = [
+  {id:'A', name:'Gesellschaft',        ic:'🏢', c:'#ffb454'},
+  {id:'B', name:'Inhalt & Strategie',  ic:'✍️', c:'#45d6ff'},
+  {id:'E', name:'Videos',              ic:'🎬', c:'#b58cff'},
+  {id:'C', name:'Recht & Datenschutz', ic:'⚖️', c:'#ff6aa8'},
+  {id:'D', name:'Technik',             ic:'🛠️', c:'#45f0c0'},
+  {id:'F', name:'Werbung',             ic:'📣', c:'#ff8a5c'},
+  {id:'G', name:'Lead-Prozess',        ic:'📞', c:'#b6f05f'},
+];
+const T  = (k,l,o={})=>({k,l,type:'text',...o});
+const TA = (k,l,o={})=>({k,l,type:'textarea',...o});
+const SEL= (k,l,opts,o={})=>({k,l,type:'select',opts,...o});
+const DT = (k,l,o={})=>({k,l,type:'date',...o});
+const NUM= (k,l,o={})=>({k,l,type:'number',...o});
+const CK = (k,l,o={})=>({k,l,type:'check',...o});
+const R = {req:true};
+
+const RAW = [];
+function add(b,id,ic,t,d,f,o={}){ RAW.push({b,id,ic,t,d,f:f||[],info:o.info||[],needs:o.needs||[],calc:o.calc,dyn:o.dyn}); }
+
+const calcB4 = v => {
+  const q=parseFloat(v.quote), g=parseFloat(v.verg);
+  if(isNaN(q)||isNaN(g)) return null;
+  return q/100*g;
+};
+const eur = x => x.toLocaleString('de-DE',{maximumFractionDigits:2})+' €';
+
+/* ---- A Gesellschaft ---- */
+add('A','A1','✉️','Anfrage an Gesellschaft senden','Schicke die offenen Fragen gesammelt an die Gesellschaft (Entwurf der E-Mail liegt vor). Das ist der Engpass für alles Weitere – so früh wie möglich.',
+ [DT('datum','Gesendet am',R), T('wen','An wen (Name / Abteilung)',R)],
+ {info:['Welche Altersvorsorgedepot-Produkte sind ab 1.1.2027 abschlussfähig, darf ich vermitteln?','Welche Erlaubnis oder Anbindung ist nötig?','Wie läuft die Freigabe von Werbemitteln ab, wie lange dauert sie?','Welche Pflichtangaben und Formulierungen gelten für Online-Werbung?','Dürfen Name und Logo verwendet werden, unter welchen Bedingungen?','Wem gehören die Leads, wer ist datenschutzrechtlich verantwortlich, wie kommen Leads ins interne CRM?','Vorgaben zu Werbekonten (Kontoinhaber, Verifizierung) und KI-generierten Inhalten?']});
+add('A','A2','👥','Ansprechpartner benannt','Wer bei der Gesellschaft ist für Compliance und Marketing zuständig?',
+ [T('compliance','Ansprechpartner Compliance (Name, Kontakt)',R), T('marketing','Ansprechpartner Marketing (Name, Kontakt)',R)]);
+add('A','A3','📋','Freigabeprozess & Pflichtangaben','Schriftlich klären: Wie läuft die Freigabe ab, wie lange dauert sie, welche Pflichtangaben gelten?',
+ [TA('ablauf','Ablauf der Freigabe',R), T('dauer','Dauer / Fristen (z. B. 10 Werktage)',R), TA('pflicht','Pflichtangaben und Formulierungen für Online-Werbung',R)],
+ {info:['Freigabe dauert oft länger als der Seitenbau – bestimmt, ob der Dezember-Start hält.']});
+add('A','A4','🔑','Vermittlungsrecht Altersvorsorgedepot','Darf Sandro das neue Altersvorsorgedepot vermitteln, und mit welchen Produkten?',
+ [SEL('ergebnis','Ergebnis',['Ja, darf vermitteln','Ja, mit Bedingungen','Noch unklar','Nein'],{...R,single:true}), TA('produkte','Welche Produkte sind ab 1.1.2027 abschlussfähig?',R), T('erlaubnis','Nötige Erlaubnis / Anbindung')],
+ {info:['Wird oft zu spät geklärt – Stolperfalle.']});
+add('A','A5','🏷️','Regeln: Konzernname, Logo, Produktnamen','Was ist erlaubt? Persönliche Marke von Sandro ist gesetzt, Konzernlogo nur nach Freigabe.',
+ [TA('regeln','Regeln zu Name, Logo, Produktnamen',R), SEL('logo','Logo-Nutzung',['Kein Logo','Logo nur nach Freigabe','Logo erlaubt'],{...R,single:true})]);
+add('A','A6','🗂️','Leads: Eigentum, Verantwortung, CRM','Wem gehören die Leads, wer ist datenschutzrechtlich verantwortlich, wie kommen sie ins interne CRM?',
+ [T('wem','Wem gehören die Leads?',R), T('verantw','Datenschutzrechtlich Verantwortlicher',R), TA('crm','Umgang mit dem internen CRM bei externer Landingpage',R)],
+ {info:['CRM ist vorhanden, aber nur mit internen Mitteln nutzbar. Geplant: Leads in eigener EU-Datenbank zwischenspeichern, Übernahme ins CRM von Hand [prüfen mit Gesellschaft].']});
+add('A','A7','🤖','Vorgaben Werbekonten & KI-Inhalte','Dürfen Google-/Meta-Konten selbst geführt werden (Kontoinhaber, Verifizierung)? Gibt es Regeln für KI-generierte Inhalte?',
+ [TA('konten','Vorgaben zu Werbekonten',R), TA('ki','Vorgaben zu KI-Inhalten (z. B. Erklärvideo)',R)]);
+
+/* ---- B Inhalt & Strategie ---- */
+add('B','B1','🎯','Zielgruppe Phase 1 festlegen','Mit wem starten wir? Eine klare Zielgruppe macht Texte und Anzeigen schärfer.',
+ [SEL('ziel','Zielgruppe',['Riester-Besitzer ("behalten oder wechseln?")','Familien mit Kindern (Kinderzulage)','Selbstständige & Freiberufler (über Steuerthemen)','Mehrere (siehe Notiz)'],R), TA('warum','Warum diese?')],
+ {info:['Versprechen der Seite: ein Gespräch, kein Produkt („Was bedeutet das für mich?“).','Schwerpunkt Vermögensaufbau, Versicherung kann im Gespräch dazukommen.']});
+add('B','B2','🧲','Lead-Magnet festlegen','Was bekommt der Interessent für seine Eintragung?',
+ [SEL('magnet','Lead-Magnet',['A: kostenloser 20-Minuten-Check','B: PDF "Riester oder Altersvorsorgedepot: 7 Fragen"','Beides (A als Hauptknopf, B als zweiter)'],R)],
+ {info:['Empfehlung: A zum Start, B als zweite Schaltfläche, Mini-Quiz (C) erst später.']});
+add('B','B3','🔎','Reform-Fakten prüfen','Alle Zahlen und Daten gegen Bundesgesetzblatt und BMF prüfen, bevor sie auf die Seite kommen.',
+ [T('gesetz','Gesetz: Datum Bundestag / Bundesrat / Verkündung',R), T('zulage','Grundzulage (Betrag bestätigt?)',R), T('soa','Sonderausgabenabzug (Höchstbetrag bestätigt?)',R), TA('selbst','Selbstständige beim Altersvorsorgedepot: Regel',R), T('quelle','Quelle (Link / BGBl.-Fundstelle)',R)],
+ {info:['Bundestag 27.3.2026, Bundesrat 8.5.2026 – Einzelne Seiten nennen 24.4. [prüfen]','Produktstart 1.1.2027, löst Riester für Neuverträge ab, Bestand bleibt.','„Bis zu 540 € Grundzulage“: nur nach Abgleich verwenden [prüfen].','Sonderausgabenabzug „bis 1.800 €“ laut Berichten [prüfen].','Selbstständige: eine Quelle verlangt GRV-Pflichtversicherung, eine andere nicht [prüfen].','Basisrente Höchstbetrag 2026: 30.826 € / 61.652 €.']});
+add('B','B4','💶','Wert eines Gesprächs berechnen','Der entscheidende Vergleich: Was ist ein geführtes Gespräch wert (Abschlussquote × Vergütung) gegenüber den Kosten pro Termin?',
+ [NUM('quote','Abschlussquote pro geführtem Gespräch (%)',{...R,ph:'z. B. 25'}), NUM('verg','Vergütung pro Abschluss (€)',{...R,ph:'z. B. 600'})],
+ {calc:v=>{const w=calcB4(v);return w==null?null:'Wert eines geführten Gesprächs ≈ '+eur(w);},
+  info:['Rechenbeispiel [Annahme]: 500 € Budget, 3 € pro Klick, 10 Leads (50 €/Lead), 5 Termine → ca. 100 € pro Termin.']});
+add('B','B5','📸','Foto, Kurzvita, Registernummer','Echtes Foto, Name, Registernummer, Region, Arbeitsweise – das schafft Vertrauen.',
+ [T('foto','Foto (Dateipfad oder Link)',R), TA('vita','Kurzvita (Werdegang, Region, Arbeitsweise)',R), TA('regnr','Registernummer(n) – bei mehreren je Zeile',{...R,ph:'z. B. 34d: D-XXXX-XXXXX-XX'+String.fromCharCode(10)+'34f: D-XXXX-XXXXX-XX'})],
+ {info:['Fotos von Sandro sind vorhanden. Keine falsch gekennzeichneten Stockfotos, Bildrechte beachten.']});
+add('B','B6','✨','Headline-Varianten schreiben','Zwei Varianten für den A/B-Test. Kein staatlicher Eindruck, keine Versprechen.',
+ [T('h1','Headline Variante 1',R), T('h2','Headline Variante 2',R), T('sub','Subline')]);
+add('B','B7','📝','Seitentexte fertig','Alle Abschnitte des One-Pagers: Hero, Anlass, Ablauf, Für wen, Über mich, 6 Fragen, Vertrauen.',
+ [T('link','Link / Dateiname der Texte',R), CK('risiko','Keine Rendite- oder Förderversprechen, Risikohinweise ergänzt',R), CK('quellen','Reform-Aussagen mit Quelle belegt',R)],
+ {info:['Aufbau: Kopfzeile → Hero → Anlass → So läuft es ab (Video) → Für wen → Über mich → Häufige Fragen → Vertrauen → Formular → Fußzeile.','Modellrechnungen und Rechner erst nach Freigabe einbauen.']});
+
+/* ---- E Videos ---- */
+add('E','E1','📜','Skript Erklärvideo (60–90 Sek.)','Kurzes Skript: Was ändert sich, für wen lohnt ein Gespräch, wie läuft es ab.',
+ [TA('skript','Skript',R)], {needs:['B2'],info:['Animiertes Erklärvideo mit Untertiteln oder Sprecher. Kein KI-Avatar, der wie Sandro wirkt.']});
+add('E','E2','🎞️','Erklärvideo produzieren','Fertiges Video mit Untertiteln.',
+ [T('link','Link / Dateipfad',R), T('tool','Tool / Sprecher')]);
+add('E','E3','🎥','Begrüßungsvideo von Sandro','Kurzes echtes Begrüßungsvideo. Auch das Video braucht die Freigabe der Gesellschaft.',
+ [T('link','Link / Dateipfad',R)]);
+
+/* ---- C Recht & Datenschutz ---- */
+add('C','C1','🧾','Erlaubnis & Status klären','Welche Erlaubnis bzw. Anbindung gilt für Sandro?',
+ [SEL('status','Status',['§ 34d GewO','§ 34f GewO','Gebundener Vermittler (Haftungsdach)','Sonstiges'],R), TA('nr','Registernummer(n) – bei mehreren je Zeile',{ph:'34d: D-XXXX-XXXXX-XX'+String.fromCharCode(10)+'34f: D-XXXX-XXXXX-XX'}), TA('notiz2','Anmerkung')], {needs:['A4'],info:['Du kannst mehrere Erlaubnisse gleichzeitig anwählen, z. B. § 34d und § 34f. Weitere Registernummern trägst du ins Feld oder in die Notizen ein.']});
+add('C','C2','📄','Impressum (§ 5 DDG)','Mit Registernummer, Aufsichtsbehörde und Schlichtungsstellen.',
+ [T('link','Entwurf (Link / Dateiname)',R), CK('pflicht','Registernummer, Aufsichtsbehörde, Schlichtungsstellen enthalten',R)]);
+add('C','C3','ℹ️','Erstinformation vorbereiten','Für den Erstkontakt gesetzlich nötig.',
+ [T('link','Dokument (Link / Dateiname)',R)]);
+add('C','C4','🤝','AV-Verträge & Verarbeitungsverzeichnis','Auftragsverarbeitungsverträge mit allen eingesetzten Diensten, Verarbeitungsverzeichnis anlegen.',
+ [TA('dienste','Dienste mit AV-Vertrag (Hosting, Terminbuchung, Datenbank, Tag Manager …)',R), SEL('stand','Stand',['Alle abgeschlossen','Teilweise','Entwurf'],{...R,single:true})], {needs:['D4']});
+add('C','C5','🔒','Datenschutzerklärung','Passend zu den tatsächlich eingesetzten Diensten.',
+ [T('link','Entwurf (Link / Dateiname)',R)]);
+add('C','C6','✅','Einwilligungen dokumentierbar','Einwilligung nicht vorangekreuzt, Link zur Datenschutzerklärung. Kontakt nur mit ausdrücklicher dokumentierter Einwilligung (§ 7 UWG), E-Mail-Werbung mit Double-Opt-In. Telefon nur zur Terminbestätigung.',
+ [TA('text','Wortlaut der Einwilligung',R), T('ablage','Wo wird die Einwilligung protokolliert?',R)]);
+add('C','C7','📬','Freigabeantrag einreichen','Seite, Anzeigen, Texte, Videos und Logo zur schriftlichen Freigabe an die Gesellschaft.',
+ [DT('datum','Eingereicht am',R), TA('umfang','Umfang (Seite, Anzeigen, Texte, Videos, Logo)',R)], {needs:['A3','B7','E3']});
+add('C','C8','🏆','Schriftliche Freigabe erhalten','Ohne Freigabe geht nichts live.',
+ [DT('datum','Freigabe am',R), T('ref','Referenz / Aktenzeichen',R), TA('auflagen','Auflagen')]);
+
+/* ---- D Technik ---- */
+add('D','D1','🌐','Domain sichern','Eigene sprechende Domain, Markenrichtlinien vorher klären.',
+ [T('domain','Domain',R), T('reg','Registrar')], {needs:['A5']});
+add('D','D2','☁️','EU-Hosting & HTTPS','Schnelle statische Seite, EU-Standort, Zugriffsschutz, Backups.',
+ [T('anbieter','Anbieter',R), T('standort','Standort')]);
+add('D','D3','📅','Terminbuchungs-Tool wählen','EU-Hosting, AV-Vertrag, Erinnerungen, Pufferzeiten.',
+ [T('tool','Tool',R), T('link','Buchungslink')]);
+add('D','D4','🗄️','Lead-Datenbank (EU-Region)','Zwischenspeicher mit Status und Löschfristen.',
+ [T('anbieter','Anbieter / Region',R), T('frist','Löschfrist für nicht reagierende Leads',{...R,def:'6 Monate'}), TA('status','Status-Stufen',{def:'neu, erreicht, Termin gebucht, Gespräch geführt, Abschluss, verloren (mit Grund)'})]);
+add('D','D5','🍪','Consent-Banner','Mit Google Consent Mode v2, gleichwertige Buttons.',
+ [T('tool','Tool',R)]);
+add('D','D6','🧱','One-Pager bauen','Mobile zuerst, feste Schaltfläche am Handy-Rand, echte Fotos, zwei Headline-Varianten.',
+ [T('link','Entwurf (Pfad / URL)',R)], {needs:['B7']});
+add('D','D7','📝','Formular + Terminbuchung einbinden','Felder: Vorname, Telefon oder E-Mail, Thema, optional Terminwunsch. Danke-Seite mit Kalender, Sofortbestätigung per E-Mail, Spamschutz (Honeypot).',
+ [CK('felder','Möglichst wenige Felder, Einwilligung nicht vorangekreuzt',R), CK('danke','Danke-Seite mit Kalender und Bestätigungs-E-Mail',R)], {needs:['C6']});
+add('D','D8','📈','Conversion-Tracking','Formular gesendet und Termin gebucht getrennt messen; Offline-Conversions später zurückmelden.',
+ [CK('gtm','Tag Manager eingerichtet',R), CK('ads','Google-Ads-Conversion (Formular / Termin getrennt)',R), CK('meta','Meta Pixel + Conversions API',R)]);
+add('D','D9','🧪','Test: Handy, Desktop, Ladezeit','Ladezeit unter 2,5 Sekunden, Barrierefreiheit (BFSG prüfen), Kontraste, Tastaturbedienung.',
+ [T('ladezeit','Gemessene Ladezeit',R), CK('geraete','Auf Handy und Desktop getestet',R), CK('bfsg','Barrierefreiheit / BFSG geprüft',R)]);
+
+/* ---- F Werbung ---- */
+add('F','F1','🛡️','Google-Ads-Konto & Verifizierung starten','Financial-Services-Verifizierung (Deutschland, über G2RS) braucht Vorlauf – früh starten.',
+ [DT('start','Verifizierung gestartet am',R), TA('status','Stand')], {needs:['A7']});
+add('F','F2','🔍','Keywords im Keyword-Planer prüfen','Suchvolumen in Berlin, Wettbewerb, Gebot oben; Inkognito-Suche mit Standort Berlin; Transparency Center.',
+ [TA('ergebnis','Ergebnis (Volumen, Gebote)',R), SEL('kanal','Entscheidung',['Google zuerst','Meta zuerst (Suchvolumen zu klein)'],{...R,single:true})],
+ {info:['Anzeigengruppen zum Start: 1 Basisrente für Selbstständige, 3 Steuerlogik Altersvorsorgedepot, 4 Riester-Besitzer.','2 Jahresend-Steuer nur, wenn Freigabe und Verifizierung vor 31.12. stehen.','Übereinstimmung: genau und Wortgruppe, kein weitgehend passend.']});
+add('F','F3','🚫','Negativ-Keywords pflegen','Startliste anpassen und ergänzen.',
+ [TA('liste','Negativ-Keywords',{...R,def:'kostenlos, pdf, vorlage, job, jobs, stellenangebot, ausbildung, karriere, versicherungsvertreter werden, quereinsteiger, forum, wiki, erfahrungen, vergleich, test, check24, finanztip, stiftung warentest, trade republic, scalable, kündigen, app, selbst abschließen'})]);
+add('F','F4','✍️','Anzeigentexte & Motive','Keine Steuerversprechen, keine Zahlen ohne Beleg; „prüfen“, „Möglichkeiten“, „Check“ statt „sparen“/„garantiert“.',
+ [TA('texte','Anzeigentexte',R), CK('ok','Keine Versprechen, keine Zahlen ohne Beleg',R)], {needs:['B1']});
+add('F','F5','💰','Testbudget & Entscheidungsregel','500 € im Monat als Test, Tagesbudget etwa 16 €, höchstens 2–3 Anzeigengruppen. Bewertung erst nach 2–3 Monaten, Leitzahl: Kosten pro gebuchtem Termin.',
+ [NUM('budget','Monatsbudget (€)',{...R,def:'500'}), NUM('tag','Tagesbudget (€)',{def:'16'}), TA('regel','Entscheidungsregel (wann erhöhen, wann stoppen)',R)],
+ {dyn:S=>{const w=calcB4((S.nodes.B4||{}).v||{});return w==null?null:'Dein Gesprächswert aus B4: '+eur(w)+' – Kosten pro Termin sollten deutlich darunter liegen.';}});
+add('F','F6','🚀','Kampagne anlegen & starten','Standort Berlin + Umland („Präsenz“), Klicks maximieren mit Klick-Obergrenze. Erst nach Freigabe und Tracking.',
+ [CK('verif','Google-Verifizierung abgeschlossen',R), DT('start','Startdatum',R), T('gruppen','Aktive Anzeigengruppen',R)], {needs:['C8','D9']});
+
+/* ---- G Lead-Prozess ---- */
+add('G','G1','⏱️','Zuständigkeit: Antwort in 15 Minuten','Erstkontakt: kurze Meldung binnen 15 Minuten zu Geschäftszeiten.',
+ [T('wer','Wer reagiert?',R), T('zeiten','Geschäftszeiten / Vertretung',R)]);
+add('G','G2','📖','Gesprächsleitfaden & Dokumentation','Fester Leitfaden für das Gespräch (vor Ort oder per Video) und Dokumentation.',
+ [T('link','Leitfaden (Link / Dateiname)',R)]);
+add('G','G3','🧮','CRM-Status & Löschfristen','Status: neu, erreicht, Termin gebucht, Gespräch geführt, Abschluss, verloren (mit Grund). Nachfassen: zwei weitere Versuche, dann schließen.',
+ [TA('status','Status-Ablauf im CRM',R), T('frist','Löschfrist',R)], {needs:['A6']});
+add('G','G4','📨','Mail-Vorlagen & Erinnerungen','Sofortbestätigung, Erinnerung 24 h und 2 h vorher (SMS nur mit Einwilligung).',
+ [T('link','Vorlagen (Link / Dateiname)',R)], {needs:['D3']});
+add('G','G5','📊','Wochenreport & Rückmeldung','Wöchentlich: Klickrate, Kosten pro Klick, Abschlussrate, Kosten pro Lead/Termin, Termine gebucht/wahrgenommen. Termine und Abschlüsse an die Werbekonten zurückmelden.',
+ [T('ort','Wo liegt der Report?',R), CK('offline','Rückmeldung von Terminen/Abschlüssen geplant',R)], {needs:['D8']});
+
+const CENTER = {b:null,id:'Z',ic:'🎯',t:'Landingpage live',d:'Das Ziel: Seite und Kampagne laufen im Soft-Launch (Zeitplan: 01.–15.12.), danach anpassen und ab 01.01.2027 den Produktstart nutzen. Meta ab Monat 2 ausbauen.',
+  f:[DT('golive','Go-live am',R), TA('kpi','Erste Kennzahlen / Erkenntnisse')], info:['Phase 3: Soft-Launch mit kleinem Budget.','Phase 4: Anzeigen und Seite nach ersten Daten anpassen.','Phase 5 (ab 01.01.2027): Budget nach Ergebnis anheben, ggf. Meta ausbauen.'], needs:[]};
+
+/* ============================================================
+   MODELL
+   ============================================================ */
+const NODES = [...RAW, CENTER];
+const BY = Object.fromEntries(NODES.map(n=>[n.id,n]));
+const BRM = Object.fromEntries(BR.map(b=>[b.id,b]));
+const chains = {};
+RAW.forEach(n=>{(chains[n.b] ||= []).push(n);});
+RAW.forEach(n=>{
+  const ch=chains[n.b], i=ch.indexOf(n);
+  n.deps = [...(i>0?[ch[i-1].id]:[]), ...n.needs];
+  n.chainDep = i>0?ch[i-1].id:null;
+});
+CENTER.deps = BR.map(b=>chains[b.id][chains[b.id].length-1].id);
+CENTER.chainDep = null;
+const DEPENDENTS = {};
+NODES.forEach(n=>n.deps.forEach(d=>(DEPENDENTS[d] ||= []).push(n.id)));
+
+/* Layout: Ziel in der Mitte, Start außen */
+const RIN=150, ROUT=830, MAXSTEP=112, MINSTEP=88;
+BR.forEach((b,bi)=>{
+  const th = (-90 + bi*360/BR.length)*Math.PI/180;
+  b.th = th;
+  const ch = chains[b.id], n=ch.length;
+  const step = Math.max(MINSTEP, Math.min((ROUT-RIN)/Math.max(1,n-1), MAXSTEP));
+  ch.forEach((nd,k)=>{
+    const r = RIN + (n-1-k)*step, zig=(k%2?1:-1)*20;
+    nd.x = r*Math.cos(th) - zig*Math.sin(th);
+    nd.y = r*Math.sin(th) + zig*Math.cos(th);
+    nd.r = 30;
+  });
+  b.lx = (RIN + (n-1)*step + 78)*Math.cos(th); b.ly=(RIN + (n-1)*step + 78)*Math.sin(th);
+});
+CENTER.x=0; CENTER.y=0; CENTER.r=64;
+
+/* ============================================================
+   ZUSTAND + SPEICHERN
+   ============================================================ */
+const ONLINE=window.QUEST_CONFIG||null;   /* gesetzt in der Online-Version → gemeinsamer Modus */
+const KEY=ONLINE?'landingpage-quest-online-v1':'landingpage-quest-v1';
+const FILE_JSON='kampagne-fortschritt.json', FILE_MD='kampagne-ergebnisse.md';
+let S;
+try{ S = JSON.parse(localStorage.getItem(KEY)); }catch(e){ S=null; }
+if(!S || !S.nodes) S={v:1,updatedAt:0,nodes:{}};
+const nd = id => (S.nodes[id] ||= {done:false,v:{},notes:''});
+const isDone = id => !!(S.nodes[id] && S.nodes[id].done);
+const status = n => isDone(n.id)?'done':(n.deps.every(isDone)?'open':'locked');
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = ts => new Date(ts).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});
+
+let dirHandle=null, saveState='none', lastSaved=0, fileTimer=null;
+
+function persist(){
+  S.updatedAt=Date.now();
+  try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+  scheduleFile();
+  if(ONLINE) scheduleSync();
+}
+function scheduleFile(){
+  clearTimeout(fileTimer);
+  if(!dirHandle){ renderSave(); return; }
+  fileTimer=setTimeout(writeFiles,500);
+}
+let writing=false, writeAgain=false;
+async function writeFiles(){
+  if(!dirHandle) return;
+  if(writing){ writeAgain=true; return; }   /* nie zwei Schreibvorgänge gleichzeitig */
+  writing=true;
+  try{
+    do{
+      writeAgain=false;
+      const out=[[FILE_JSON,JSON.stringify(S,null,2)],[FILE_MD,toMarkdown()]];
+      for(const [name,text] of out){
+        const fh=await dirHandle.getFileHandle(name,{create:true});
+        const w=await fh.createWritable(); await w.write(text); await w.close();
+      }
+      saveState='ok'; lastSaved=Date.now();
+    }while(writeAgain);
+  }catch(e){ console.error(e); saveState='bad'; }
+  writing=false;
+  renderSave();
+}
+/* beim Schließen/Verstecken des Tabs noch schnell sichern */
+document.addEventListener('visibilitychange',()=>{ if(document.hidden && dirHandle){ clearTimeout(fileTimer); writeFiles(); } });
+
+/* IndexedDB: Ordner-Verbindung merken */
+const idb = {
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open('lp-quest',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});},
+  async get(k){const db=await this.open();return new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});},
+  async set(k,v){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+};
+const FS = !!window.showDirectoryPicker;
+
+async function initDir(){
+  if(!FS){ saveState='nofs'; renderSave(); return; }
+  try{
+    const h=await idb.get('dir');
+    if(h){
+      const p=await h.queryPermission({mode:'readwrite'});
+      if(p==='granted'){ dirHandle=h; await syncFromDir(); saveState='ok'; lastSaved=Date.now(); await writeFiles(); }
+      else { dirHandle=null; saveState='perm'; window._pendingDir=h; }
+    }
+  }catch(e){ console.warn(e); }
+  renderAll();
+}
+async function connectDir(){
+  if(!FS){ toast('Dein Browser kann keinen Ordner verbinden – nutze ⬇ JSON zum Sichern (Chrome/Edge empfohlen).'); return; }
+  try{
+    let h=window._pendingDir;
+    if(h){ const p=await h.requestPermission({mode:'readwrite'}); if(p!=='granted') h=null; }
+    if(!h) h=await window.showDirectoryPicker({mode:'readwrite',id:'lp-quest'});
+    dirHandle=h; window._pendingDir=null;
+    try{ await idb.set('dir',h); }catch(e){ console.warn('Ordner konnte nicht gemerkt werden',e); }
+    await syncFromDir();
+    await writeFiles();
+    renderAll();
+    toast('Ordner verbunden – jede Eingabe wird jetzt automatisch gespeichert.');
+  }catch(e){ if(e.name!=='AbortError') console.warn(e); }
+}
+async function syncFromDir(){
+  try{
+    const fh=await dirHandle.getFileHandle(FILE_JSON);
+    const txt=await (await fh.getFile()).text();
+    const d=JSON.parse(txt);
+    if(d && d.nodes && (d.updatedAt||0) > (S.updatedAt||0)){
+      S=d; try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+      sel=null; if(chars.length) resetChars();
+      toast('Fortschritt aus der gespeicherten Datei geladen.');
+    }
+  }catch(e){ /* Datei existiert noch nicht */ }
+}
+
+/* Markdown für andere Sitzungen */
+function toMarkdown(){
+  const total=NODES.length, done=NODES.filter(n=>isDone(n.id)).length;
+  const L=[];
+  L.push('# Landingpage-Kampagne – Fortschritt (Landingpage Quest)');
+  L.push('');
+  L.push(`Stand: ${fmtDate(S.updatedAt||Date.now())} · Fortschritt: ${done}/${total} Schritte`);
+  L.push('');
+  L.push('> Zum Weiterarbeiten in einer neuen Sitzung: diese Datei lesen. Maschinenlesbar liegt dieselbe Information in `'+FILE_JSON+'`; das Tool ist `landingpage-quest.html` (Ordner verbinden oder JSON laden). Kontext zum Projekt: `landingpage-finanzen-mindmap.md`.');
+  L.push('');
+  const open=NODES.filter(n=>status(n)==='open');
+  L.push('## Jetzt dran (freigeschaltet)');
+  if(open.length) open.forEach(n=>L.push(`- **${n.id}** ${n.t}`)); else L.push('- (nichts offen)');
+  if(S.pos&&BY[S.pos]) L.push('', `Zuletzt bearbeitet / Standort der Figuren: **${S.pos}** ${BY[S.pos].t}`);
+  L.push('');
+  const groups=[...BR.map(b=>({name:`${b.id} · ${b.name}`,nodes:chains[b.id]})),{name:'Ziel',nodes:[CENTER]}];
+  groups.forEach(g=>{
+    L.push(`## ${g.name}`);
+    g.nodes.forEach(n=>{
+      const st=status(n), d=S.nodes[n.id]||{v:{},notes:''};
+      const mark = st==='done'?'[x]':'[ ]';
+      let line=`- ${mark} **${n.id}** ${n.t}`;
+      if(st==='done'&&d.doneAt) line+=` (erledigt ${fmtDate(d.doneAt)})`;
+      if(st==='locked') line+=' – gesperrt, wartet auf: '+n.deps.filter(x=>!isDone(x)).join(', ');
+      L.push(line);
+      n.f.forEach(f=>{
+        const v=(d.v||{})[f.k];
+        if(v===undefined||v===''||v===false||(Array.isArray(v)&&!v.length)) return;
+        const val = f.type==='check'?'ja':(Array.isArray(v)?v.join(', '):String(v));
+        L.push(`  - ${f.l}: ${val.replace(/\n/g,'\n    ')}`);
+      });
+      if(n.calc){const c=n.calc(d.v||{}); if(c) L.push('  - '+c);}
+      if(d.notes) L.push(`  - Notiz: ${d.notes.replace(/\n/g,'\n    ')}`);
+    });
+    L.push('');
+  });
+  return L.join('\n');
+}
+function download(name,text,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type}));
+  a.download=name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ============================================================
+   KARTE
+   ============================================================ */
+const svg=document.getElementById('map'), view=document.getElementById('viewport'), world=document.getElementById('world');
+const gEdges=document.getElementById('gEdges'), gNodes=document.getElementById('gNodes'), gLabels=document.getElementById('gLabels'), gFx=document.getElementById('gFx');
+const NS='http://www.w3.org/2000/svg';
+let cam={x:0,y:0,s:.5}, sel=null;
+
+const MINS=.1, MAXS=2.5, clampS=s=>Math.min(MAXS,Math.max(MINS,s));
+/* Bildmitte der Karte (bei offenem Handy-Panel nach oben verschoben) */
+function viewOrigin(){
+  const W=view.clientWidth,H=view.clientHeight;
+  const sheet = window.innerWidth<=860 && document.body.classList.contains('panel-open');
+  return {W,H,ox:W/2,oy: sheet ? Math.max(60,(window.innerHeight*0.34-view.getBoundingClientRect().top)/2) : H/2};
+}
+/* Die Karte ist ein 2000×2000-SVG; die Kamera ist eine CSS-Transformation auf einer eigenen
+   Grafikebene → Verschieben/Zoomen skaliert nur die fertige Textur (GPU) statt neu zu zeichnen.
+   Nach der Bewegung wird will-change wieder gelöst, damit die Karte scharf neu gerastert wird. */
+const ORG=1000; let wcTimer=0;
+function applyCam(){
+  const v=viewOrigin();
+  svg.style.willChange='transform';
+  svg.style.transform=`translate3d(${v.ox-(ORG+cam.x)*cam.s}px,${v.oy-(ORG+cam.y)*cam.s}px,0) scale(${cam.s})`;
+  clearTimeout(wcTimer); wcTimer=setTimeout(()=>{ svg.style.willChange='auto'; },220);
+}
+let camRaf=0;   /* mehrere Eingabeereignisse pro Frame → nur ein Zeichnen */
+function scheduleCam(){ if(!camRaf) camRaf=requestAnimationFrame(()=>{camRaf=0;applyCam();}); }
+function zoomAt(clientX,clientY,ns){
+  const r=view.getBoundingClientRect(), v=viewOrigin();
+  const mx=clientX-r.left, my=clientY-r.top;
+  const wx=cam.x+(mx-v.ox)/cam.s, wy=cam.y+(my-v.oy)/cam.s;
+  ns=clampS(ns); cam.s=ns; cam.x=wx-(mx-v.ox)/ns; cam.y=wy-(my-v.oy)/ns; scheduleCam();
+}
+let anim=null;
+function flyTo(x,y,s){
+  const from={...cam}, to={x,y,s:s??cam.s}, t0=performance.now(), D=650;
+  cancelAnimationFrame(anim);
+  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  (function step(now){
+    const t=Math.min(1,(now-t0)/D), e=ease(t);
+    cam={x:from.x+(to.x-from.x)*e,y:from.y+(to.y-from.y)*e,s:from.s+(to.s-from.s)*e};
+    applyCam(); if(t<1) anim=requestAnimationFrame(step);
+  })(t0);
+}
+function fit(){
+  const W=view.clientWidth,H=view.clientHeight;
+  if(!W||!H){ setTimeout(fit,100); return; }
+  flyTo(0,0,clampS(Math.min(W,H)/(2*ROUT+260)));
+}
+function el(tag,attrs={},parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs) e.setAttribute(k,attrs[k]);
+  if(parent) parent.appendChild(e); return e;
+}
+function wrap(text,max=17){
+  const words=text.split(' '),lines=[];let cur='';
+  words.forEach(w=>{ if((cur+' '+w).trim().length>max && cur){lines.push(cur);cur=w;} else cur=(cur+' '+w).trim(); });
+  if(cur) lines.push(cur);
+  return lines.slice(0,3);
+}
+/* Emojis einmalig als Bild vorrendern: Farb-Emoji-Text im SVG war der größte Ruckler-Verursacher */
+const emojiCache={};
+function emojiImg(ch,gray){
+  const key=ch+(gray?'|g':''); if(emojiCache[key]) return emojiCache[key];
+  const c=document.createElement('canvas'); c.width=c.height=96; const x=c.getContext('2d');
+  if(gray && 'filter' in x) x.filter='grayscale(1)';
+  x.font='72px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  x.textAlign='center'; x.textBaseline='middle'; x.fillText(ch,48,52);
+  return emojiCache[key]=c.toDataURL();
+}
+function renderMap(){
+  gEdges.innerHTML=''; gNodes.innerHTML=''; gLabels.innerHTML='';
+  BR.forEach(b=>{
+    const t=el('text',{class:'brlabel',x:b.lx,y:b.ly,style:`--c:${b.c}`},gLabels);
+    t.textContent=b.name;
+  });
+  /* Kanten */
+  NODES.forEach(n=>{
+    n.deps.forEach(did=>{
+      const a=BY[did], c=BRM[a.b||n.b]||BR[0];
+      const cross = n.id!=='Z' && did!==n.chainDep;
+      const colorBr = BRM[(n.b||a.b)];
+      let d;
+      if(cross){
+        const mx=(a.x+n.x)/2*0.55, my=(a.y+n.y)/2*0.55;
+        d=`M${a.x},${a.y} Q${mx},${my} ${n.x},${n.y}`;
+      } else d=`M${a.x},${a.y} L${n.x},${n.y}`;
+      const st = isDone(did) ? (isDone(n.id)?'lit':'live') : '';
+      const p=el('path',{d,class:`edge${cross?' cross':''} ${st}`,style:`--c:${(colorBr||c).c}`},gEdges);
+    });
+  });
+  /* Knoten */
+  NODES.forEach(n=>{
+    const st=status(n), br=n.b?BRM[n.b]:null, col=br?br.c:'#5ef0ff';
+    const g=el('g',{class:`node ${st}${n.id==='Z'?' center':''}${sel===n.id?' sel':''}`,'data-id':n.id,transform:`translate(${n.x},${n.y})`,style:`--c:${col}`},gNodes);
+    if(n.id==='Z'){
+      const total=NODES.length-1, done=NODES.filter(x=>x.id!=='Z'&&isDone(x.id)).length;
+      const C=2*Math.PI*(n.r+14);
+      el('circle',{class:'ringbg',r:n.r+14},g);
+      el('circle',{class:'ring',r:n.r+14,'stroke-dasharray':`${C*done/total} ${C}`},g);
+    }
+    el('circle',{class:'glow',r:n.r+4},g);
+    if(st==='open') el('circle',{class:'halo',r:n.r+3},g);
+    el('circle',{class:'body',r:n.r},g);
+    const sz=n.id==='Z'?60:34;
+    el('image',{class:'ic',href:emojiImg(n.ic,st==='locked'),x:-sz/2,y:-sz/2-(n.id==='Z'?2:0),width:sz,height:sz},g);
+    if(n.id!=='Z'){
+      const tg=el('text',{class:'tag',y:-n.r-5},g); tg.textContent=n.id;
+    }
+    if(st==='done'){
+      el('circle',{class:'tick',cx:n.r*.72,cy:-n.r*.72,r:11,fill:'#07102a'},g);
+      const b=el('text',{class:'badge',x:n.r*.72,y:-n.r*.72,fill:'#5ef0ff',style:'font-size:13px;font-weight:700;fill:#5ef0ff'},g); b.textContent='✓';
+    } else if(st==='locked'){
+      el('image',{class:'badge',href:emojiImg('🔒'),x:n.r*.72-8,y:-n.r*.72-8,width:16,height:16},g);
+    }
+    const lines = n.id==='Z'?['LANDINGPAGE','LIVE']:wrap(n.t);
+    const lb=el('text',{class:'lbl',y:n.r+15,style:n.id==='Z'?'font-size:14px;font-weight:700':''},g);
+    lines.forEach((ln,i)=>{const ts=el('tspan',{x:0,dy:i?14:0},lb); ts.textContent=ln;});
+  });
+  applyCam();
+}
+
+/* Pan / Zoom / Klick */
+const ptrs=new Map(); let drag=null, pinch=null;
+view.addEventListener('pointerdown',e=>{
+  if(e.button>0) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{ view.setPointerCapture(e.pointerId); }catch(_){}
+  if(ptrs.size===2){
+    const [a,b]=[...ptrs.values()];
+    drag=null; pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,s:cam.s};
+    cancelAnimationFrame(anim); view.classList.add('drag');
+  } else if(ptrs.size===1){
+    drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y,moved:false};
+  }
+});
+view.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch && ptrs.size>=2){
+    const [a,b]=[...ptrs.values()], d=Math.hypot(a.x-b.x,a.y-b.y)||1;
+    zoomAt((a.x+b.x)/2,(a.y+b.y)/2,pinch.s*d/pinch.d);
+    return;
+  }
+  if(!drag) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(!drag.moved && Math.hypot(dx,dy)>6){drag.moved=true; view.classList.add('drag'); cancelAnimationFrame(anim);}
+  if(drag.moved){ cam.x=drag.cx-dx/cam.s; cam.y=drag.cy-dy/cam.s; scheduleCam(); }
+});
+function endPointer(e,cancelled){
+  if(!ptrs.delete(e.pointerId)) return;
+  if(pinch){ if(ptrs.size<2){ pinch=null; view.classList.remove('drag'); } drag=null; return; }
+  const was=drag; drag=null; view.classList.remove('drag');
+  if(was && !was.moved && !cancelled){
+    const t=document.elementFromPoint(e.clientX,e.clientY);
+    const g=t && t.closest && t.closest('.node');
+    if(g) selectNode(g.dataset.id);
+    else { sel=null; markSel(); if(window.innerWidth<=860) document.body.classList.remove('panel-open'); applyCam(); renderPanel(); }
+  }
+}
+view.addEventListener('pointerup',e=>endPointer(e,false));
+view.addEventListener('pointercancel',e=>endPointer(e,true));
+view.addEventListener('wheel',e=>{
+  e.preventDefault(); cancelAnimationFrame(anim);
+  const dy = e.deltaY*(e.deltaMode===1?16:1);
+  zoomAt(e.clientX,e.clientY,cam.s*Math.exp(-dy*(e.ctrlKey?0.01:0.0015)));
+},{passive:false});
+document.getElementById('zIn').onclick=()=>flyTo(cam.x,cam.y,clampS(cam.s*1.35));
+document.getElementById('zOut').onclick=()=>flyTo(cam.x,cam.y,clampS(cam.s/1.35));
+document.getElementById('zFit').onclick=fit;
+window.addEventListener('resize',scheduleCam);
+
+/* ============================================================
+   PANEL
+   ============================================================ */
+const panel=document.getElementById('panel');
+function openNodes(){ return NODES.filter(n=>status(n)==='open'); }
+
+/* Auswahl nur per Klasse umschalten – die Karte wird dafür nicht neu aufgebaut */
+function markSel(){
+  gNodes.querySelectorAll('.node.sel').forEach(g=>g.classList.remove('sel'));
+  if(sel){ const g=gNodes.querySelector(`.node[data-id="${sel}"]`); if(g) g.classList.add('sel'); }
+}
+function selectNode(id,fly=true){
+  sel=id; const n=BY[id], locked=status(n)==='locked';
+  if(!locked) (n.f||[]).forEach(f=>{ const d=nd(id); if(f.def!==undefined && d.v[f.k]===undefined) d.v[f.k]=f.def; });
+  document.body.classList.add('panel-open');
+  markSel(); renderPanel();
+  if(!locked) moveChars(id);
+  if(fly) flyTo(n.x,n.y,Math.max(cam.s,.95)); else applyCam();
+}
+function reqOk(n){
+  const v=nd(n.id).v;
+  return n.f.every(f=>!f.req || (f.type==='check'? v[f.k]===true : String(v[f.k]??'').trim()!==''));
+}
+const optHTML=(o,on)=>`<label class="opt${on?' on':''}"><input type="checkbox" value="${esc(o)}" ${on?'checked':''}><span>${esc(o)}</span></label>`;
+function fieldHTML(n,f){
+  const v=nd(n.id).v[f.k], rq=f.req?' <em>*</em>':'';
+  const dis=isDone(n.id)?'':'';
+  if(f.type==='check')
+    return `<div class="field"><label class="chk"><input type="checkbox" data-k="${f.k}" ${v===true?'checked':''}> <span>${esc(f.l)}${rq}</span></label></div>`;
+  let inp;
+  if(f.type==='textarea') inp=`<textarea data-k="${f.k}" placeholder="${esc(f.ph||'')}">${esc(v??'')}</textarea>`;
+  else if(f.type==='select' && !f.single){
+    const cur=Array.isArray(v)?v:(v?[v]:[]);
+    const all=[...f.opts,...cur.filter(x=>!f.opts.includes(x))];   /* selbst hinzugefügte Optionen bleiben erhalten */
+    inp=`<div class="multi" data-multi="${f.k}">${all.map(o=>optHTML(o,cur.includes(o))).join('')}</div>
+      <div class="addopt"><input type="text" placeholder="Eigene Option hinzufügen …" data-addopt="${f.k}"><button type="button" class="btn small" data-addbtn="${f.k}">+ hinzufügen</button></div>
+      <div class="hintm">Mehrfachauswahl möglich</div>`;
+  }
+  else if(f.type==='select') inp=`<select data-k="${f.k}"><option value="">– wählen –</option>${f.opts.map(o=>`<option ${v===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  else inp=`<input type="${f.type}" data-k="${f.k}" value="${esc(v??'')}" placeholder="${esc(f.ph||'')}">`;
+  return `<div class="field"><label>${esc(f.l)}${rq}</label>${inp}</div>`;
+}
+function renderPanel(){
+  if(!sel){ renderOverview(); return; }
+  const n=BY[sel], st=status(n), d=nd(n.id), br=n.b?BRM[n.b]:null;
+  const stTxt={open:'jetzt dran',done:'geschafft',locked:'gesperrt'}[st];
+  let h=`<button class="btn small x" id="pClose">✕</button>
+   <div><span class="chip" style="color:${br?br.c:'#5ef0ff'}">${br?esc(br.ic+' '+br.name):'🎯 Ziel'}</span><span class="chip ${st}">${stTxt}</span><span class="chip">${n.id}</span></div>
+   <h2 style="margin-top:10px">${n.ic} ${esc(n.t)}</h2>
+   <p class="muted" style="margin:6px 0 0">${esc(n.d)}</p>
+   <div class="muted byline" id="byline">${bylineText(n.id)}</div>`;
+  if(st==='locked'){
+    h+=`<h3>Das fehlt noch</h3>`+n.deps.filter(x=>!isDone(x)).map(x=>`<div class="need" data-go="${x}"><span class="dot"></span><span><b>${x}</b> ${esc(BY[x].t)}</span></div>`).join('');
+    h+=`<p class="muted" style="margin-top:10px">🔒 Schließe zuerst diese Schritte ab, dann wird dieser freigeschaltet.</p>`;
+  }
+  if(n.info.length) h+=`<h3>Wissen aus der Planung</h3><ul class="info">${n.info.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`;
+  if(st!=='locked'){
+    h+=`<h3>Dein Ergebnis</h3>`+n.f.map(f=>fieldHTML(n,f)).join('');
+    h+=`<div class="calc" id="calc" style="display:none"></div>`;
+    h+=`<div class="field"><label>Notizen (optional)</label><textarea data-notes placeholder="Alles, was du später noch wissen willst …">${esc(d.notes||'')}</textarea></div>`;
+    h+=`<div class="actions">`+(st==='done'
+      ?`<button class="btn" id="bReopen">↩ Wieder öffnen</button><span class="muted" style="align-self:center">erledigt ${d.doneAt?fmtDate(d.doneAt):''}</span>`
+      :`<button class="btn primary" id="bDone" ${reqOk(n)?'':'disabled'}>✓ Schritt abschließen</button><span class="muted" id="reqHint" style="align-self:center">${reqOk(n)?'':'Pflichtfelder (*) ausfüllen'}</span>`)+`</div>`;
+  } else {
+    h+=`<p class="muted" style="margin-top:14px">Die Eingabefelder erscheinen, sobald der Schritt freigeschaltet ist.</p>`;
+  }
+  const unlocks=(DEPENDENTS[n.id]||[]).map(x=>BY[x]);
+  if(unlocks.length) h+=`<h3>Schaltet frei</h3>`+unlocks.map(u=>`<div class="need ${isDone(u.id)?'done':''}" data-go="${u.id}"><span class="dot"></span><span><b>${u.id}</b> ${esc(u.t)}</span></div>`).join('');
+  panel.innerHTML=h; panel.dataset.st=st;
+  updateCalc(n);
+  panel.querySelector('#pClose').onclick=()=>{sel=null;document.body.classList.remove('panel-open');markSel();applyCam();renderPanel();};
+  panel.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>selectNode(b.dataset.go));
+  panel.querySelectorAll('[data-k]').forEach(inp=>{
+    const h=()=>{ nd(n.id).v[inp.dataset.k]= inp.type==='checkbox'?inp.checked:inp.value; persist(); updateReq(n); updateCalc(n); };
+    inp.addEventListener(inp.tagName==='SELECT'||inp.type==='checkbox'||inp.type==='date'?'change':'input',h);
+  });
+  panel.querySelectorAll('[data-multi]').forEach(w=>w.addEventListener('change',()=>{
+    w.querySelectorAll('.opt').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
+    nd(n.id).v[w.dataset.multi]=[...w.querySelectorAll('input:checked')].map(i=>i.value);
+    persist(); updateReq(n); updateCalc(n);
+  }));
+  panel.querySelectorAll('[data-addbtn]').forEach(btn=>{
+    const k=btn.dataset.addbtn, box=panel.querySelector(`[data-addopt="${k}"]`), wrapEl=panel.querySelector(`[data-multi="${k}"]`);
+    const addOpt=()=>{
+      const val=box.value.trim(); if(!val) return;
+      let ex=[...wrapEl.querySelectorAll('input')].find(i=>i.value.toLowerCase()===val.toLowerCase());
+      if(!ex){ wrapEl.insertAdjacentHTML('beforeend',optHTML(val,true)); ex=wrapEl.lastElementChild.querySelector('input'); }
+      ex.checked=true; box.value=''; wrapEl.dispatchEvent(new Event('change'));
+    };
+    btn.onclick=addOpt;
+    box.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addOpt(); } });
+  });
+  const nt=panel.querySelector('[data-notes]'); if(nt) nt.addEventListener('input',()=>{nd(n.id).notes=nt.value;persist();});
+  const bd=panel.querySelector('#bDone'); if(bd) bd.onclick=()=>complete(n.id);
+  const br2=panel.querySelector('#bReopen'); if(br2) br2.onclick=()=>reopen(n.id);
+}
+function updateReq(n){
+  const b=document.getElementById('bDone'); if(!b) return;
+  const ok=reqOk(n); b.disabled=!ok;
+  const hint=document.getElementById('reqHint'); if(hint) hint.textContent=ok?'':'Pflichtfelder (*) ausfüllen';
+}
+function updateCalc(n){
+  const box=document.getElementById('calc'); if(!box) return;
+  const parts=[]; if(n.calc){const c=n.calc(nd(n.id).v); if(c) parts.push(c);} if(n.dyn){const c=n.dyn(S); if(c) parts.push(c);}
+  box.style.display=parts.length?'block':'none'; box.textContent=parts.join(' · ');
+}
+function renderOverview(){
+  const total=NODES.length, done=NODES.filter(n=>isDone(n.id)).length;
+  let h='';
+  if(ONLINE){
+    h+=`<div class="banner onl"><b>👥 Gemeinsamer Stand</b><br>Alle Änderungen werden sofort mit allen geteilt, die denselben Zugangscode haben. Du bist angemeldet als <b>${esc(SYNC.name||'?')}</b>.</div>`;
+  } else if(saveState!=='ok'){
+    h+=`<div class="banner"><b>💾 Ergebnisse dauerhaft sichern</b><br>${FS?'Verbinde einmal deinen Projektordner. Dann wird jede Eingabe automatisch als <code>'+FILE_JSON+'</code> und <code>'+FILE_MD+'</code> gespeichert – so kannst du in jeder neuen Sitzung nahtlos weitermachen.':'Dieser Browser kann keinen Ordner verbinden. Nutze oben ⬇ JSON / ⬇ MD zum Sichern (Chrome oder Edge empfohlen).'}<br>${FS?'<button class="btn primary" id="bConnect">'+(saveState==='perm'?'Ordner erneut freigeben':'Ordner verbinden')+'</button>':''}</div>`;
+  }
+  h+=`<h2>🎯 Dein Weg zur Landingpage</h2><p class="muted" style="margin:6px 0 0">Das Ziel liegt in der Mitte. Starte außen bei den leuchtenden Blasen. Ein Schritt wird erst frei, wenn der davor abgeschlossen ist – Querverbindungen (gestrichelt) verbinden die Zweige.</p>`;
+  h+=`<h3>Fortschritt · ${done}/${total}</h3>`;
+  BR.forEach(b=>{
+    const ch=chains[b.id], dn=ch.filter(x=>isDone(x.id)).length;
+    h+=`<div class="brrow" data-br="${b.id}"><span class="nm">${b.ic} ${esc(b.name)}</span><span class="b"><i style="width:${dn/ch.length*100}%;background:${b.c}"></i></span><span class="ct">${dn}/${ch.length}</span></div>`;
+  });
+  const op=openNodes();
+  h+=`<h3>Jetzt dran (${op.length})</h3>`+(op.length?op.map(n=>`<div class="need" data-go="${n.id}"><span class="dot" style="background:${n.b?BRM[n.b].c:'#5ef0ff'}"></span><span><b>${n.id}</b> ${esc(n.t)}</span></div>`).join(''):'<p class="muted">Nichts offen.</p>');
+  panel.innerHTML=h;
+  panel.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>selectNode(b.dataset.go));
+  panel.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>{
+    const ch=chains[b.dataset.br]; const t=ch.find(x=>status(x)==='open')||ch.find(x=>!isDone(x.id))||ch[ch.length-1]; selectNode(t.id);
+  });
+  const bc=panel.querySelector('#bConnect'); if(bc) bc.onclick=connectDir;
+}
+
+/* Aktionen */
+function complete(id){
+  const n=BY[id]; if(!reqOk(n)||status(n)!=='open') return;
+  const before=new Set(openNodes().map(x=>x.id));
+  const d=nd(id); d.done=true; d.doneAt=Date.now();
+  persist();
+  const fresh=openNodes().filter(x=>!before.has(x.id));
+  burst(n);
+  renderAll();
+  if(id==='Z'){ document.getElementById('win').classList.add('show'); return; }
+  if(fresh.length){
+    toast('✨ Freigeschaltet: '+fresh.map(x=>x.id+' '+x.t).join(' · '));
+    /* nur nachziehen, wenn der Nutzer in der Zwischenzeit nicht woanders hingeklickt hat */
+    setTimeout(()=>{ if(sel===id || sel===null) selectNode(fresh[0].id); },900);
+  } else toast('✓ Geschafft – aber der nächste Schritt wartet noch auf andere Zweige.');
+}
+function reopen(id){
+  const blockers=(DEPENDENTS[id]||[]).filter(isDone);
+  if(blockers.length){ toast('Erst diese wieder öffnen: '+blockers.join(', ')); return; }
+  const d=nd(id); d.done=false; delete d.doneAt; persist(); renderAll();
+}
+function burst(n){
+  for(let i=0;i<16;i++){
+    const c=el('circle',{cx:n.x,cy:n.y,r:4,fill:n.b?BRM[n.b].c:'#5ef0ff'},gFx);
+    c.style.transformBox='fill-box'; c.style.transformOrigin='center';   /* sonst schrumpfen die Funken zum Kartenmittelpunkt */
+    const a=Math.PI*2*i/16, dist=60+Math.random()*50;
+    c.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${Math.cos(a)*dist}px,${Math.sin(a)*dist}px) scale(.2)`,opacity:0}],{duration:800,easing:'ease-out'}).onfinish=()=>c.remove();
+  }
+}
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),3800);
+}
+
+/* Kopfzeile */
+function renderTop(){
+  const total=NODES.length, done=NODES.filter(n=>isDone(n.id)).length;
+  document.querySelector('#bar i').style.width=(done/total*100)+'%';
+  document.getElementById('progTxt').textContent=`${done} / ${total}`;
+}
+function renderSave(){
+  const b=document.getElementById('save');
+  const m={on:['ok','🟢 Gemeinsam · '+(SYNC.name||''),'Alle Änderungen sind synchronisiert. Klick: abmelden'],
+    off:['bad','⚠ Keine Verbindung – Änderungen werden nachgeholt','Klick: abmelden'],
+    ok:['ok','💾 Ordner · '+(lastSaved?new Date(lastSaved).toLocaleTimeString('de-DE',{timeStyle:'short'}):''),'Automatisch gespeichert. Klick: anderen Ordner wählen'],
+    none:['warn','💾 Nur im Browser – Ordner verbinden','Klicken, um den Projektordner zu verbinden'],
+    perm:['warn','💾 Ordner erneut freigeben','Browser fragt nach Erlaubnis'],
+    bad:['bad','⚠ Speichern fehlgeschlagen – erneut verbinden','Klicken'],
+    nofs:['warn','💾 Nur Browser (⬇ JSON nutzen)','Dieser Browser kann keinen Ordner verbinden']}[saveState]||['warn','',''];
+  b.className=m[0]; b.textContent=m[1]; b.title=m[2];
+  if(!sel) renderOverview();
+}
+function renderAll(){ renderTop(); renderMap(); renderPanel(); renderSave(); }
+
+/* Buttons */
+document.getElementById('save').onclick=()=>{ if(ONLINE){ if(confirm('Abmelden? Der gemeinsame Stand bleibt gespeichert; mit dem Zugangscode kommst du jederzeit wieder rein.')) logoutOnline(''); return; } if(saveState==='nofs') toast('Nutze ⬇ JSON und ⬇ MD zum Sichern.'); else { window._pendingDir = saveState==='perm'?window._pendingDir:null; connectDir(); } };
+document.getElementById('btnNext').onclick=()=>{
+  const op=openNodes(); if(!op.length){ toast('Keine freien Schritte – alles erledigt oder wartet.'); return; }
+  /* der freie Schritt nach dem aktuell gewählten (bzw. Figuren-Standort) */
+  const cur=op.findIndex(n=>n.id===(sel||S.pos));
+  selectNode(op[(cur+1)%op.length].id);
+};
+document.getElementById('btnPanel').onclick=()=>{document.body.classList.toggle('panel-open');applyCam();};
+document.getElementById('btnMd').onclick=()=>download(FILE_MD,toMarkdown(),'text/markdown');
+document.getElementById('btnJson').onclick=()=>download(FILE_JSON,JSON.stringify(S,null,2),'application/json');
+document.getElementById('btnImport').onclick=()=>document.getElementById('file').click();
+document.getElementById('file').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ const d=JSON.parse(await f.text()); if(!d.nodes) throw 0;
+    if(ONLINE && !confirm('Das ersetzt den GEMEINSAMEN Stand für alle, die den Zugangscode haben. Wirklich laden?')){ e.target.value=''; return; }
+    S=d; sel=null; renderAll(); resetChars(); persist(); toast('Fortschritt geladen.'); }
+  catch(err){ toast('Datei konnte nicht gelesen werden.'); }
+  e.target.value='';
+};
+document.getElementById('btnReset').onclick=()=>{
+  if(!confirm('Wirklich ALLES zurücksetzen? Alle eingetragenen Ergebnisse gehen verloren (gespeicherte Dateien im Ordner werden dabei überschrieben).')) return;
+  S={v:1,updatedAt:0,nodes:{}}; sel=null; renderAll(); resetChars(); persist();
+};
+if(ONLINE) document.getElementById('btnReset').style.display='none';   /* gemeinsamer Stand darf nicht versehentlich gelöscht werden */
+document.getElementById('winClose').onclick=()=>document.getElementById('win').classList.remove('show');
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){sel=null;markSel();renderPanel();} });
+
+/* ============================================================
+   FIGUREN: laufen entlang eines Zweigs, teleportieren zwischen Zweigen
+   ============================================================ */
+const gChars=document.getElementById('gChars');
+const SKIN1='#f1c9a5', SKIN2='#e4b08a';
+const SPRITE = {
+  /* kleiner Anzugträger: navy Nadelstreifen, babyblaues Hemd */
+  s:`<g class="bob">
+    <ellipse cx="0" cy="1" rx="14" ry="3" fill="#000" opacity=".4"/>
+    <g class="leg legL"><rect x="-6.5" y="-21" width="6.5" height="21" rx="2.2" fill="url(#pin)"/><rect x="-6.5" y="-3" width="10.5" height="3.6" rx="1.8" fill="#0a0c18"/></g>
+    <g class="leg legR"><rect x="0" y="-21" width="6.5" height="21" rx="2.2" fill="url(#pin)"/><rect x="0" y="-3" width="10.5" height="3.6" rx="1.8" fill="#0a0c18"/></g>
+    <g class="arm armL"><rect x="-15" y="-37" width="6" height="17" rx="3" fill="url(#pin)"/><circle cx="-12" cy="-19.5" r="2.9" fill="${SKIN1}"/></g>
+    <rect x="-10.5" y="-39" width="21" height="20" rx="5.5" fill="url(#pin)"/>
+    <polygon points="-4.8,-39 4.8,-39 0,-26" fill="#a9d6ff"/>
+    <path d="M-4.8,-39 L-1.2,-27 L-7.5,-31Z M4.8,-39 L1.2,-27 L7.5,-31Z" fill="#16224a"/>
+    <polygon points="0,-37 -1.7,-33 0,-27 1.7,-33" fill="#ff5fa2"/>
+    <g class="arm armR"><rect x="9" y="-37" width="6" height="17" rx="3" fill="url(#pin)"/><circle cx="12" cy="-19.5" r="2.9" fill="${SKIN1}"/></g>
+    <circle cx="0" cy="-48" r="10" fill="${SKIN1}"/>
+    <path d="M-10,-49 A10 10 0 0 1 10,-49 Q4,-55 -2,-54 Q-8,-53 -10,-49Z" fill="#2b1d1a"/>
+    <circle cx="4.2" cy="-47.5" r="1.4" fill="#1a1a2a"/>
+    <path d="M2.2,-43.5 q2.2,1.7 4.4,0" stroke="#a85a4a" fill="none" stroke-width="1.1" stroke-linecap="round"/>
+    <circle class="ear" cx="-7.6" cy="-47.5" r="1.9" fill="#5ef0ff"/>
+  </g>`,
+  /* größerer, stämmiger Anzugträger: schwarze Anzughose, weißes Hemd */
+  t:`<g class="bob">
+    <ellipse cx="0" cy="1" rx="20" ry="3.5" fill="#000" opacity=".4"/>
+    <g class="leg legL"><rect x="-10" y="-23" width="9.5" height="23" rx="2.5" fill="#16161f"/><rect x="-10" y="-3.6" width="13" height="3.8" rx="1.9" fill="#05060b"/></g>
+    <g class="leg legR"><rect x="0.5" y="-23" width="9.5" height="23" rx="2.5" fill="#16161f"/><rect x="0.5" y="-3.6" width="13" height="3.8" rx="1.9" fill="#05060b"/></g>
+    <g class="arm armL"><rect x="-24.5" y="-47" width="9" height="18" rx="4.5" fill="#f6f7ff"/><rect x="-23.5" y="-31" width="7" height="10" rx="3.5" fill="${SKIN2}"/><circle cx="-20" cy="-20" r="3.4" fill="${SKIN2}"/></g>
+    <rect x="-17" y="-49" width="34" height="32" rx="12" fill="#f6f7ff"/>
+    <ellipse cx="4" cy="-31" rx="15" ry="12" fill="#f6f7ff"/>
+    <path d="M3,-46 V-21" stroke="#d9dcef" stroke-width="1"/>
+    <rect x="-17" y="-22" width="34" height="7.5" rx="2.5" fill="#16161f"/>
+    <rect x="-17" y="-23.5" width="34" height="2.6" fill="#07070d"/>
+    <rect x="-1.5" y="-24" width="5.5" height="3.6" rx="1" fill="#ff5fa2"/>
+    <polygon points="-6.5,-49 0,-41 -10,-45" fill="#e3e6f6"/><polygon points="6.5,-49 0,-41 10,-45" fill="#e3e6f6"/>
+    <polygon points="0,-46 -2.8,-41.5 0,-30 2.8,-41.5" fill="#0b0b12"/>
+    <g class="arm armR"><rect x="15.5" y="-47" width="9" height="18" rx="4.5" fill="#f6f7ff"/><rect x="16.5" y="-31" width="7" height="10" rx="3.5" fill="${SKIN2}"/><circle cx="20" cy="-20" r="3.4" fill="${SKIN2}"/></g>
+    <circle cx="0" cy="-58" r="11.5" fill="#e6b48e"/>
+    <path d="M-11.5,-60 A11.5 11.5 0 0 1 11.5,-60 Q5,-67.5 -3,-66.5 Q-9,-65.5 -11.5,-60Z" fill="#14100f"/>
+    <path d="M2.5,-62.8 h4.6" stroke="#14100f" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="4.8" cy="-58.5" r="1.5" fill="#1a1a2a"/>
+    <path d="M2.2,-53.5 q2.6,1.8 5.2,0" stroke="#a0584a" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle class="ear" cx="-8.6" cy="-58.5" r="2" fill="#5ef0ff"/>
+  </g>`
+};
+const chars=[];
+function mkChar(k){
+  const g=el('g',{class:'ch'},gChars), fxw=el('g',{},g), flip=el('g',{},fxw);
+  flip.innerHTML=SPRITE[k];
+  return {k,g,fxw,flip,x:0,y:0,dir:1};
+}
+const nodePos=(id,c)=>{ const n=BY[id]; return {x:n.x+(c.k==='s'?-(n.r+18):(n.r+22)), y:n.y+n.r*.45}; };
+function setC(c,x,y){ c.x=x; c.y=y; c.g.setAttribute('transform',`translate(${x},${y})`); }
+function faceC(c,dx){ if(Math.abs(dx)<.5) return; c.dir=dx<0?-1:1; c.flip.setAttribute('transform',`scale(${c.dir},1)`); }
+function idleFace(c){ faceC(c,c.k==='s'?1:-1); }
+function cancelFx(c){ c.fxw.getAnimations().forEach(a=>a.cancel()); c.g.classList.remove('walk'); }
+function placeChars(id){ chars.forEach(c=>{ const p=nodePos(id,c); setC(c,p.x,p.y); idleFace(c); }); }
+function resetChars(){
+  moveTok++; const id=(S.pos&&BY[S.pos])?S.pos:(openNodes()[0]||BY.A1).id; S.pos=id;
+  chars.forEach(cancelFx); placeChars(id);
+}
+/* Weg nur innerhalb eines Zweigs (inkl. Ziel in der Mitte) – sonst null = teleportieren */
+function pathBetween(a,b){
+  if(a===b) return [a];
+  const A=BY[a], B=BY[b];
+  const br = A.b && A.b===B.b ? A.b : (!A.b ? B.b : (!B.b ? A.b : null));
+  if(!br) return null;
+  const seq=[...chains[br].map(n=>n.id),'Z'], i=seq.indexOf(a), j=seq.indexOf(b);
+  if(i<0||j<0) return null;
+  return i<j ? seq.slice(i,j+1) : seq.slice(j,i+1).reverse();
+}
+let moveTok=0;
+function moveChars(id,silent){
+  if(!chars.length) return;
+  const from=S.pos&&BY[S.pos]?S.pos:id;
+  if(from===id && S.pos===id) return;
+  moveTok++; const tok=moveTok;
+  /* Mitten im Teleport (unsichtbar) → sofort am alten Ziel absetzen; mitten im Laufen → von der aktuellen Stelle weiterlaufen */
+  chars.forEach(c=>{ const midTp=c.fxw.getAnimations().length>0; cancelFx(c); if(midTp){ const p=nodePos(from,c); setC(c,p.x,p.y); idleFace(c); } });
+  S.pos=id; if(!silent) persist();
+  const path=pathBetween(from,id);
+  if(path) walk(path,tok); else teleport(id,tok);
+}
+function walk(path,tok){
+  chars.forEach((c,ci)=>{
+    const pts=[{x:c.x,y:c.y},...path.map(id=>nodePos(id,c))], segs=[]; let total=0;
+    for(let i=1;i<pts.length;i++){ const d=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y); segs.push(d); total+=d; }
+    const speed=Math.max(240,total/2.2), t0=performance.now()+ci*320;   /* lange Wege dauern höchstens ~2 s */
+    (function step(now){
+      if(tok!==moveTok) return;
+      let dist=(now-t0)/1000*speed;
+      if(dist<=0){ requestAnimationFrame(step); return; }
+      if(dist>=total){ const e=pts[pts.length-1]; setC(c,e.x,e.y); c.g.classList.remove('walk'); idleFace(c); return; }
+      c.g.classList.add('walk');
+      let i=0; while(i<segs.length-1 && dist>segs[i]){ dist-=segs[i]; i++; }
+      const a=pts[i], b=pts[i+1], t=dist/(segs[i]||1);
+      setC(c,a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t); faceC(c,b.x-a.x);
+      requestAnimationFrame(step);
+    })(performance.now());
+  });
+}
+function beam(x,y){
+  const r=el('rect',{x:x-14,y:y-125,width:28,height:127,rx:8,fill:'url(#beam)'},gFx);
+  r.style.transformBox='fill-box'; r.style.transformOrigin='50% 100%';
+  r.animate([{opacity:0,transform:'scaleX(.2)'},{opacity:1,transform:'scaleX(1)',offset:.35},{opacity:0,transform:'scaleX(.35)'}],{duration:650}).onfinish=()=>r.remove();
+  const e=el('ellipse',{cx:x,cy:y,rx:12,ry:4.5,fill:'none',stroke:'#5ef0ff','stroke-width':2.5},gFx);
+  e.style.transformBox='fill-box'; e.style.transformOrigin='center';
+  e.animate([{opacity:.95,transform:'scale(.4)'},{opacity:0,transform:'scale(3)'}],{duration:700}).onfinish=()=>e.remove();
+}
+function teleport(id,tok){
+  chars.forEach((c,ci)=>setTimeout(()=>{
+    if(tok!==moveTok) return;
+    beam(c.x,c.y);
+    c.fxw.animate([{transform:'scale(1,1)',opacity:1,filter:'brightness(1)'},{transform:'scale(.12,1.9)',opacity:0,filter:'brightness(3.5)'}],{duration:330,easing:'ease-in',fill:'forwards'}).onfinish=()=>{
+      if(tok!==moveTok) return;
+      const p=nodePos(id,c); setC(c,p.x,p.y); idleFace(c); beam(p.x,p.y);
+      c.fxw.animate([{transform:'scale(.12,1.9)',opacity:0,filter:'brightness(3.5)'},{transform:'scale(1,1)',opacity:1,filter:'brightness(1)'}],{duration:400,easing:'ease-out',fill:'forwards'}).onfinish=()=>{ if(tok===moveTok) c.fxw.getAnimations().forEach(a=>a.cancel()); };
+    };
+  }, ci*170));
+}
+
+/* ============================================================
+   GEMEINSAMER MODUS – nur aktiv, wenn window.QUEST_CONFIG gesetzt ist.
+   Zugriff nur über Datenbankfunktionen, die den Zugangscode prüfen (Tabellen sind gesperrt).
+   Abgleich feldweise: zwei Personen können gleichzeitig verschiedene Felder desselben Schritts bearbeiten.
+   ============================================================ */
+const AUTH_KEY='lpq-online-auth', BASE_KEY='landingpage-quest-online-base-v1';
+const SYNC={code:null,name:null,since:null,busy:false,again:false,timer:null,loop:null,online:null,first:true,base:{nodes:{},pos:undefined},at:{},by:{}};
+const jclone=x=>JSON.parse(JSON.stringify(x));
+const sameVal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const newBase=()=>({done:false,v:{},notes:''});
+function bylineText(id){
+  if(!ONLINE||!SYNC.by[id]) return '';
+  return `Zuletzt geändert von <b>${esc(SYNC.by[id])}</b> · ${fmtDate(SYNC.at[id])}`;
+}
+async function api(fn,body){
+  const r=await fetch(ONLINE.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:ONLINE.key,Authorization:'Bearer '+ONLINE.key,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+const authErr=r=>Object.assign(new Error(r.error==='locked'?'Zu viele Fehlversuche – bitte 10 Minuten warten.':'Zugangscode falsch oder geändert.'),{auth:true});
+function loadBase(){ try{ const b=JSON.parse(localStorage.getItem(BASE_KEY)); if(b&&b.nodes){ SYNC.base=b; SYNC.first=false; } }catch(e){} }
+function saveBase(){ try{ localStorage.setItem(BASE_KEY,JSON.stringify(SYNC.base)); }catch(e){} }
+function patchFor(id){
+  const cur=S.nodes[id]; if(!cur) return null;
+  const b=SYNC.base.nodes[id]||newBase(), p={}; let any=false, pv={};
+  for(const k in (cur.v||{})) if(!sameVal(cur.v[k],(b.v||{})[k])){ pv[k]=cur.v[k]; any=true; }
+  if(any) p.v=pv;
+  if((cur.notes||'')!==(b.notes||'')){ p.notes=cur.notes||''; any=true; }
+  if(!!cur.done!==!!b.done){ p.done=!!cur.done; p.doneAt=cur.doneAt||null; any=true; }
+  return any?p:null;
+}
+function applyPatchToBase(id,p){
+  const b=(SYNC.base.nodes[id] ||= newBase());
+  if(p.v) Object.assign(b.v,jclone(p.v));
+  if('notes' in p) b.notes=p.notes;
+  if('done' in p){ b.done=p.done; b.doneAt=p.doneAt; }
+}
+async function pushDiffs(){
+  for(const n of NODES){
+    const p=patchFor(n.id); if(!p) continue;
+    const r=await api('quest_put_node',{p_code:SYNC.code,p_node:n.id,p_patch:p,p_who:SYNC.name});
+    if(!r.ok){ if(r.error==='unauthorized'||r.error==='locked') throw authErr(r); throw new Error(r.error); }
+    applyPatchToBase(n.id,p); SYNC.at[n.id]=r.at; SYNC.by[n.id]=SYNC.name;
+  }
+  if(S.pos && S.pos!==SYNC.base.pos){
+    const r=await api('quest_put_meta',{p_code:SYNC.code,p_key:'pos',p_value:S.pos,p_who:SYNC.name});
+    if(!r.ok){ if(r.error==='unauthorized'||r.error==='locked') throw authErr(r); throw new Error(r.error); }
+    SYNC.base.pos=S.pos;
+  }
+}
+async function pull(){
+  const r=await api('quest_get',{p_code:SYNC.code,p_since:SYNC.since});
+  if(!r.ok) throw authErr(r);
+  const firstLoad=SYNC.since===null;
+  if(SYNC.first && r.nodes.length>0){ S.nodes={}; SYNC.base={nodes:{},pos:undefined}; }   /* erster Abgleich: der gemeinsame Stand gewinnt */
+  let mapChanged=false, nodeChanged=false, anyChange=false;
+  r.nodes.forEach(({id,data,at,by})=>{
+    const n=BY[id]; if(!n||!data) return;
+    SYNC.at[id]=at; SYNC.by[id]=by;
+    const cur=nd(id), b=(SYNC.base.nodes[id] ||= newBase());
+    for(const k in (data.v||{})){
+      const rv=data.v[k], pending=!sameVal(cur.v[k],b.v[k]);
+      b.v[k]=rv;
+      if(!pending && !sameVal(cur.v[k],rv)){ cur.v[k]=rv; anyChange=true; if(id===sel) nodeChanged=true; }
+    }
+    if('notes' in data){
+      const pending=(cur.notes||'')!==(b.notes||''); b.notes=data.notes||'';
+      if(!pending && (cur.notes||'')!==b.notes){ cur.notes=b.notes; anyChange=true; if(id===sel) nodeChanged=true; }
+    }
+    if('done' in data){
+      const pending=!!cur.done!==!!b.done; b.done=!!data.done; b.doneAt=data.doneAt||undefined;
+      if(!pending && !!cur.done!==b.done){ cur.done=b.done; if(b.done) cur.doneAt=data.doneAt||Date.now(); else delete cur.doneAt; mapChanged=true; anyChange=true; }
+      else if(!pending && b.done && data.doneAt) cur.doneAt=data.doneAt;
+    }
+  });
+  let posMove=null;
+  r.meta.forEach(m=>{
+    if(m.key==='pos' && m.value && BY[m.value]){
+      const old=SYNC.base.pos; SYNC.base.pos=m.value;
+      if(firstLoad){ S.pos=m.value; posMove='reset'; }
+      else if(S.pos===old && S.pos!==m.value) posMove=m.value;
+    }
+  });
+  SYNC.since=r.server_time; SYNC.first=false;
+  try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+  /* Anzeige aktualisieren */
+  if(firstLoad){ renderAll(); if(posMove==='reset') resetChars(); }
+  else {
+    if(mapChanged){ renderTop(); renderMap(); }
+    if(sel){ if(nodeChanged||mapChanged) refreshPanelFields(); }
+    else if(anyChange) renderOverview();
+    if(posMove && posMove!=='reset') moveChars(posMove,true);
+  }
+}
+/* Panel aktualisieren, ohne die Eingabe zu stören, die du gerade tippst */
+function refreshPanelFields(){
+  if(!sel) return;
+  const n=BY[sel], st=status(n);
+  if(panel.dataset.st!==st){ renderPanel(); return; }
+  if(st==='locked') return;
+  const d=nd(sel), act=document.activeElement;
+  panel.querySelectorAll('[data-k]').forEach(inp=>{
+    if(inp===act) return;
+    const v=d.v[inp.dataset.k];
+    if(inp.type==='checkbox') inp.checked=v===true; else if(inp.value!==String(v??'')) inp.value=v??'';
+  });
+  panel.querySelectorAll('[data-multi]').forEach(w=>{
+    if(w.contains(act)) return;
+    const f=n.f.find(x=>x.k===w.dataset.multi); if(!f) return;
+    const cur=Array.isArray(d.v[f.k])?d.v[f.k]:(d.v[f.k]?[d.v[f.k]]:[]);
+    w.innerHTML=[...f.opts,...cur.filter(x=>!f.opts.includes(x))].map(o=>optHTML(o,cur.includes(o))).join('');
+  });
+  const nt=panel.querySelector('[data-notes]'); if(nt && nt!==act && nt.value!==(d.notes||'')) nt.value=d.notes||'';
+  const by=document.getElementById('byline'); if(by) by.innerHTML=bylineText(sel);
+  updateReq(n); updateCalc(n);
+}
+function setOnlineState(ok){
+  if(SYNC.online===ok) return;
+  SYNC.online=ok; saveState=ok?'on':'off'; renderSave();
+}
+async function tick(){
+  if(!SYNC.code) return;
+  if(SYNC.busy){ SYNC.again=true; return; }
+  SYNC.busy=true;
+  try{
+    /* allererster Abgleich: erst den gemeinsamen Stand lesen, dann eigene Änderungen senden –
+       sonst überschreibt die lokale Standardposition/ein veralteter Cache den Serverstand */
+    if(SYNC.since===null){ await pull(); await pushDiffs(); }
+    else { await pushDiffs(); await pull(); }
+    saveBase(); setOnlineState(true);
+  }
+  catch(e){ if(e&&e.auth) logoutOnline(e.message); else { console.warn('Sync:',e); setOnlineState(false); } }
+  SYNC.busy=false;
+  if(SYNC.again){ SYNC.again=false; scheduleSync(); }
+}
+function scheduleSync(){ clearTimeout(SYNC.timer); SYNC.timer=setTimeout(tick,350); }
+function showGate(msg){
+  document.getElementById('gate').classList.add('show');
+  document.getElementById('gErr').textContent=msg||'';
+  const a=(()=>{try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){return null;}})();
+  if(a&&a.name) document.getElementById('gName').value=a.name;
+  setTimeout(()=>document.getElementById(document.getElementById('gName').value?'gCode':'gName').focus(),50);
+}
+function logoutOnline(msg){
+  clearInterval(SYNC.loop); clearTimeout(SYNC.timer); SYNC.loop=null; SYNC.code=null; SYNC.since=null; SYNC.online=null;
+  try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); localStorage.setItem(AUTH_KEY,JSON.stringify({name:a&&a.name||SYNC.name||''})); }catch(e){}
+  showGate(msg);
+}
+function startLoop(){
+  SYNC.since=null; tick();
+  clearInterval(SYNC.loop); SYNC.loop=setInterval(tick,2500);
+}
+async function startOnline(){
+  loadBase();
+  let a=null; try{ a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch(e){}
+  if(a&&a.code&&a.name){ SYNC.code=a.code; SYNC.name=a.name; saveState='off'; renderSave(); startLoop(); }
+  else showGate('');
+  document.getElementById('gateForm').addEventListener('submit',async ev=>{
+    ev.preventDefault();
+    const name=document.getElementById('gName').value.trim(), code=document.getElementById('gCode').value.trim().toUpperCase(), btn=document.getElementById('gBtn'), err=document.getElementById('gErr');
+    if(!name||!code){ err.textContent='Bitte Name und Zugangscode eingeben.'; return; }
+    btn.disabled=true; err.textContent='';
+    try{
+      const r=await api('quest_login',{p_code:code});
+      if(!r.ok) throw authErr(r);
+      SYNC.code=code; SYNC.name=name;
+      try{ localStorage.setItem(AUTH_KEY,JSON.stringify({code,name})); }catch(e){}
+      document.getElementById('gate').classList.remove('show'); document.getElementById('gCode').value='';
+      SYNC.first=!localStorage.getItem(BASE_KEY);
+      saveState='off'; SYNC.online=null; renderSave(); startLoop();
+    }catch(e){ err.textContent=e.auth?e.message:'Keine Verbindung zum Server. Bitte später erneut versuchen.'; }
+    btn.disabled=false;
+  });
+}
+
+/* Start */
+applyCam(); renderAll();
+chars.push(mkChar('t'),mkChar('s')); resetChars();
+cam={x:0,y:0,s:.4}; applyCam(); fit();
+if(ONLINE) startOnline(); else initDir();
+</script>
+</body>
+</html>
