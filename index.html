@@ -2,7 +2,15 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#13102e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LP Quest">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Landingpage Quest (gemeinsam)</title>
 <meta name="robots" content="noindex,nofollow">
 <style>
@@ -34,6 +42,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 #save.warn{color:var(--warn);border-color:#7a5a1d}
 #save.bad{color:var(--bad);border-color:#7a2b2b}
 #btnPanel{display:none}
+#btnInstall{display:none}
+#offline{display:none;font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid #7a5a1d;color:var(--warn);background:var(--stone)}
+body.is-offline #offline{display:inline-block}
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+#top{padding-top:max(10px,env(safe-area-inset-top))}
+html{overscroll-behavior:none}
 #main{flex:1;display:flex;min-height:0;position:relative}
 #mapWrap{flex:1;position:relative;min-width:0;background:
   radial-gradient(circle at 50% 50%, #ff5fa224 0, transparent 38%),
@@ -161,6 +175,8 @@ svg#map{position:absolute;left:0;top:0;width:2000px;height:2000px;display:block;
 <header id="top">
   <h1>LANDINGPAGE <span>QUEST</span></h1>
   <div id="prog"><div id="bar"><i></i></div><span id="progTxt"></span></div>
+  <button class="btn small" id="btnInstall" title="Als App auf diesem Gerät installieren">⤓ App installieren</button>
+  <span id="offline">Offline</span>
   <button class="btn primary" id="btnNext" title="Zum nächsten freien Schritt springen">▶ Nächster Schritt</button>
   <button class="btn" id="btnPanel">☰</button>
   <button id="save" class="" title=""></button>
@@ -1209,6 +1225,20 @@ applyCam(); renderAll();
 chars.push(mkChar('t'),mkChar('s')); resetChars();
 cam={x:0,y:0,s:.4}; applyCam(); fit();
 if(ONLINE) startOnline(); else initDir();
+</script>
+<script>
+/* ===== Web-App (PWA): Service Worker, Installieren, Offline-Anzeige ===== */
+(function(){
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+  let deferred=null; const btn=document.getElementById('btnInstall');
+  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferred=e; btn.style.display='inline-block'; });
+  btn.addEventListener('click',async()=>{ if(!deferred) return; deferred.prompt(); await deferred.userChoice.catch(()=>{}); deferred=null; btn.style.display='none'; });
+  window.addEventListener('appinstalled',()=>{ btn.style.display='none'; });
+  const upd=()=>document.body.classList.toggle('is-offline',!navigator.onLine);
+  window.addEventListener('online',upd); window.addEventListener('offline',upd); upd();
+})();
 </script>
 </body>
 </html>
